@@ -1,0 +1,5 @@
+Some additional clarification on the first lab work and expectations:
+You should have one goal tree with 5 different outcomes to show to me, not 5 trees with one outcome each
+Your system should support all IF AND OR THEN combinations, and the example you will show me should have them to prove the functionality.
+If you are aiming for the higher grades (>=8) your system + goal tree example should have at least 4 different questions to go through till it reaches and outcome
+Also you can have the topic not be necessarily Luna City tourists but any domain as long as there is a clear separation on the logic.
