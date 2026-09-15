@@ -13,7 +13,9 @@ I choose {specify the countries}, because all of the have crosses and different 
 
 I grouped them in several classes stating what they have in common all then creating a new class, this way i created the goal tree, then i was checking for new ways to describe a flag and got the OR nodes
 
-Task 2 
+{show report_related/forward checking}
+
+Task 3
 
 (below i forgot to use english please translate)
 
@@ -50,3 +52,5 @@ flag is big cross and not outlined cross or bicolor and off-center cross
 flag is off-center cross
 flag is small cross or off-center cross
 flag is yellow cross
+
+{show report_related/forward checking illustration}
