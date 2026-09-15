@@ -14,7 +14,7 @@ I choose {specify the countries}, because all of the have crosses and different 
 I grouped them in several classes stating what they have in common all then creating a new class, this way i created the goal tree, then i was checking for new ways to describe a flag and got the OR nodes
 
 {show report_related/forward checking}
-
+![alt text](report_related/forward_checking.drawio.png)
 Task 3
 
 (below i forgot to use english please translate)
@@ -54,3 +54,4 @@ flag is small cross or off-center cross
 flag is yellow cross
 
 {show report_related/forward checking illustration}
+![alt text](<report_related/forward checking illustration.drawio.png>)
