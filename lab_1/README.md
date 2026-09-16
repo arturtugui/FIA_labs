@@ -141,11 +141,3 @@ Questions:
       not big, not outlined, centered -> yes (example: switzerland)
       not big, not outlined, not centered -> yes (example: greece)
 
-
-
-  
-
-
-  i think this question is redundant since all of the have crosses
-  
-  Does your flag have a cross
