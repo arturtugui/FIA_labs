@@ -26,7 +26,7 @@ def pretty_goal_tree(node, indent=0):
         return f"{pad}- {node}"
     
 if __name__ == '__main__':
-    goal = 'flag is Iceland'
+    goal = 'flag is Norway'
     results = backward_chain(FLAG_RULES, goal, verbose=True)
     
     print(f"\n--- Resulting Goal Tree for {goal} ---")

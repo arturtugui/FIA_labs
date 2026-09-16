@@ -41,7 +41,7 @@ FLAG_RULES = (
     IF( AND("(?x) is outlined cross and big cross or tricolor", "(?x) is off-center cross"),
         THEN("(?x) is outlined cross and big cross or tricolor and off-center cross") ),  # R13
 
-    IF( AND("(?x) is outlined cross and big cross or tricolor and off-center cross", "(?x) is yellow cross"),
+    IF( AND("(?x) is outlined cross and big cross or tricolor and off-center cross", "(?x) is blue cross"),
         THEN("(?x) is Norway") ),                     # R14
 
     IF( AND("(?x) is outlined cross and big cross or tricolor and off-center cross", "(?x) is red cross"),
