@@ -58,9 +58,50 @@ def backward_chain(rules, hypothesis, verbose=False):
     Outputs the goal tree from having rules and hyphothesis, works like an "encyclopedia"
     """
 
-    # TODO: you should implement backward_chain algorithm here
+    base_facts = []
 
-    return "TODO: implement backward_chain" #change return
+    # for every rule
+    for rule in rules:
+        for consequent in rule.consequent():
+            # match the hyp against the rule's consequent
+            # ex. match("(?x) is Iceland", "Flag is Iceland") => {x: "Iceland"}
+            bindings = match(consequent, hypothesis)
+        
+            # if there is a match
+            if bindings is not None:
+                antecedent = rule.antecedent()
+
+                # populate the antecedent with the bindings
+                # ex. populate("(?x) is red cross", {x: "Iceland"}) => "Iceland is red cross"
+                populated_antecedent = populate(antecedent, bindings)
+
+                # recursively call backward_chain on the populated antecedent until we reach a base fact
+                base_fact = _solve_antecedent(rules, populated_antecedent, verbose)
+                base_facts.append(base_fact)
+
+    # if there are no base facts, return the hypothesis
+    if not base_facts:
+        return hypothesis
+    
+    # if multiple rules can produce this hypothesis, combine them in an OR node
+    base_facts = OR(*base_facts) if len(base_facts) > 1 else base_facts[0]
+    
+    return simplify(base_facts)
+
+def _solve_antecedent(rules, antecedent, verbose):
+    """
+    Helper function to recursively backward-chain on sub-expressions 
+    (AND, OR, NOT) or base string leaves within a rule's antecedent.
+    """
+    if isinstance(antecedent, AND):
+        solved_children = [_solve_antecedent(rules, child, verbose) for child in antecedent]
+        return simplify(AND(*solved_children)) # * unpacks the list for it to work with AND
+    elif isinstance(antecedent, OR):
+        solved_children = [_solve_antecedent(rules, child, verbose) for child in antecedent]
+        return simplify(OR(*solved_children))
+    else:
+        # It's a simple antecedent, apply bakward chaining
+        return backward_chain(rules, antecedent, verbose)
 
 
 def instantiate(template, values_dict):
