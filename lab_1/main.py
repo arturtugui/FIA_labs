@@ -43,6 +43,8 @@ def _build_fact_to_question():
     for q in QUESTIONS:
         if q["qtype"] == "yes_no":
             candidate_answers = ["yes", "no"]
+        elif q["qtype"] == "number_input":
+            candidate_answers = [2]
         elif q["qtype"] == "single_choice":
             candidate_answers = [value for _label, value in q["options"]]
         else:

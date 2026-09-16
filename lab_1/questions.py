@@ -30,6 +30,7 @@ from production import populate
 # ---------------------------------------------------------------------------
 YESNO = "yes_no"
 CHOICE = "single_choice"
+NUMBER = "number_input"
 CHECKBOX = "multi_select"
 
 UNKNOWN = "UNKNOWN"  # sentinel: this answer rules out every hypothesis
@@ -63,11 +64,10 @@ QUESTIONS = [
     {
         "id": "color_count",
         "text": "How many colors does the flag have?",
-        "qtype": CHOICE,
-        "options": [("2 colors", "2"), ("3 colors", "3"), ("4 or more colors", "4+")],
+        "qtype": NUMBER,
         "resolve": lambda ans: (
-            {"(?x) is bicolor": True, "(?x) is tricolor": False} if ans == "2" else
-            {"(?x) is bicolor": False, "(?x) is tricolor": True} if ans == "3" else
+            {"(?x) is bicolor": True, "(?x) is tricolor": False} if ans == 2 else
+            {"(?x) is bicolor": False, "(?x) is tricolor": True} if ans == 3 else
             UNKNOWN
         ),
     },
@@ -84,9 +84,9 @@ QUESTIONS = [
         "options": [("Red", "red"), ("Blue", "blue"), ("Yellow", "yellow"),
                     ("White", "white"), ("Other", "other")],
         "resolve": lambda ans: (
-            {"(?x) is red cross": True} if ans == "red" else
-            {"(?x) is blue cross": True} if ans == "blue" else
-            {"(?x) is yellow cross": True} if ans == "yellow" else
+            {"(?x) is red cross": True, "(?x) is blue cross": False, "(?x) is yellow cross": False} if ans == "red" else
+            {"(?x) is red cross": False, "(?x) is blue cross": True, "(?x) is yellow cross": False} if ans == "blue" else
+            {"(?x) is red cross": False, "(?x) is blue cross": False, "(?x) is yellow cross": True} if ans == "yellow" else
             UNKNOWN  # white / other: no rule in the KB uses these colors
         ),
     },
@@ -189,11 +189,17 @@ def ask(question, subject="flag", input_fn=input, print_fn=print):
     print_fn(question["text"])
 
     if question["qtype"] == YESNO:
-        raw = input_fn("(yes/no): ").strip().lower()
+        raw = input_fn("(y/n): ").strip().lower()
         while raw not in ("yes", "y", "no", "n"):
-            raw = input_fn("Please answer yes or no: ").strip().lower()
+            raw = input_fn("Please answer y or n: ").strip().lower()
         ans = "yes" if raw in ("yes", "y") else "no"
         facts = question["resolve"](ans)
+
+    elif question["qtype"] == NUMBER:
+        raw = input_fn("Enter a natural number greater than 0: ").strip()
+        while not raw.isdigit() or int(raw) == 0:
+            raw = input_fn("Please enter a natural number greater than 0: ").strip()
+        facts = question["resolve"](int(raw))
 
     elif question["qtype"] == CHOICE:
         for i, (label, _value) in enumerate(question["options"], 1):
