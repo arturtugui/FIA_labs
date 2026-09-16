@@ -55,3 +55,35 @@ flag is yellow cross
 
 {show report_related/forward checking illustration}
 ![alt text](<report_related/forward checking illustration.drawio.png>)
+
+task 4
+
+i implemented the BC
+
+here are example outputs
+
+```text
+--- Resulting Goal Tree for flag is Greece ---
+OR:
+  AND:
+    - flag is small cross
+    - flag is bicolor
+    - flag is off-center cross
+  AND:
+    OR:
+      - flag is small cross
+      - flag is off-center cross
+    - flag has stripes
+```
+
+```text
+--- Resulting Goal Tree for flag is Iceland ---
+AND:
+  OR:
+    AND:
+      - flag is outlined cross
+      - flag is big cross
+    - flag is tricolor
+  - flag is off-center cross
+  - flag is red cross
+  ```
