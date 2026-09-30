@@ -267,6 +267,89 @@ def extract_constraints(state: str) -> list[Constraint]:
     return constraints
 
 
+# Task 2 -- Constraint propagation
+
+def constraint_propagation(state: str) -> str:  # REQUIRED
+    """Mark mines forced by the basic all-mines and all-safe rules.
+
+    This function does not guess or search. Safe deductions are tracked while
+    reasoning, because removing a known-safe cell can make another clue force
+    its remaining hidden cells to be mines. The output only displays newly
+    deduced mines, as required by the lab.
+    """
+    # Work with two views of the position:
+    # - grid is the text we must eventually return;
+    # - constraints are the clue equations we use to reason.
+    grid = parse_board(state)
+    constraints = extract_constraints(state)
+
+    # Keep deductions separate from the displayed board. A deduced safe cell
+    # remains X in the result, but is treated as safe during reasoning.
+    # For each cell found by reasoning, remember either "M" or "safe".
+    # These labels are internal: the requested output only shows new mines.
+    deductions: dict[tuple[int, int], str] = {}
+    changed = True
+
+    # One clue's deductions can simplify another clue, so make passes until a
+    # complete pass discovers no additional cell status.
+    while changed:
+        changed = False
+
+        # A pass means: revisit every clue using all deductions made so far.
+        for constraint in constraints:
+            # mines_needed is the clue count after input M marks were
+            # subtracted by extract_constraints(). We subtract any additional
+            # mines found in earlier propagation passes here.
+            remaining_mines = constraint.mines_needed
+            unresolved_cells = []
+
+            # Split the clue's original hidden neighbours into three groups:
+            # known mines, known safe cells, and cells we still have to decide.
+            for cell in constraint.hidden_cells:
+                cell_status = deductions.get(cell)
+                if cell_status == "M":
+                    remaining_mines -= 1
+                elif cell_status is None:
+                    unresolved_cells.append(cell)
+                # A cell marked "safe" belongs in neither group above.
+
+            # An impossible remaining count means the clues contradict each
+            # other or the input marks; avoid making deductions from it.
+            if remaining_mines < 0 or remaining_mines > len(unresolved_cells):
+                raise ValueError("The game state contains contradictory clues.")
+
+            if not unresolved_cells:
+                continue
+
+            # All-mines rule: if every unresolved cell is needed to reach the
+            # clue's count, all of them must be mines.
+            if remaining_mines == len(unresolved_cells):
+                # Example: 2 mines still needed among 2 unknown cells means
+                # both unknown cells must be mines.
+                for cell in unresolved_cells:
+                    if deductions.get(cell) != "M":
+                        deductions[cell] = "M"
+                        changed = True
+
+            # All-safe rule: if the clue already has its full mine count, its
+            # other unresolved neighbours must be safe.
+            elif remaining_mines == 0:
+                # Example: 0 mines still needed among 3 unknown cells means
+                # all 3 can be safely excluded as mines.
+                for cell in unresolved_cells:
+                    if cell not in deductions:
+                        deductions[cell] = "safe"
+                        changed = True
+
+    # At this point a full pass made no new mine or safe deduction, so the
+    # basic rules have reached their fixpoint and another pass cannot help.
+    # Only mine deductions are shown in the output. Safe deductions above are
+    # internal reasoning facts and leave their original X symbols untouched.
+    for (row, column), status in deductions.items():
+        if status == "M":
+            grid[row][column] = "M"
+
+    return format_board(grid)
 
 
 
@@ -279,13 +362,6 @@ def backtracking_step(state: str) -> tuple[tuple[int, int], str]:  # REQUIRED
 def backtracking_solve(answer_key: str) -> list[tuple[tuple[int, int], str]]:  # REQUIRED
     """Play from an all-X board with pure backtracking until the board is solved
     or a mine is hit. Returns the list of (cell, board_after) for every step."""
-    raise NotImplementedError
-
-
-# Task 2 -- Constraint propagation
-def constraint_propagation(state: str) -> str:  # REQUIRED
-    """Return the same game state with every cell deduced to be a mine
-    marked M. Nothing else is changed."""
     raise NotImplementedError
 
 
