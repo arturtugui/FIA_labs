@@ -682,6 +682,7 @@ def _find_frontier_solution_with_propagation(
 
 def _analyse_frontier(
     constraints: list[Constraint],
+    search_stats: dict[str, int] | None = None,
 ) -> tuple[
     Assignment,
     list[tuple[int, int]],  # forced_mine_cells
@@ -707,7 +708,7 @@ def _analyse_frontier(
     left out of both certainty lists. If no such solution exists, it goes in
     ``forced_mines``. The same reasoning identifies ``forced_safe`` cells.
     """
-    first_solution = _find_frontier_solution(constraints)
+    first_solution = _find_frontier_solution(constraints, search_stats=search_stats)
     if first_solution is None:
         raise ValueError("The game state contains contradictory clues.")
 
@@ -724,6 +725,7 @@ def _analyse_frontier(
         opposite_solution = _find_frontier_solution(
             constraints,
             fixed_choices={cell: opposite_value},
+            search_stats=search_stats,
         )
 
         if opposite_solution is None:
@@ -737,6 +739,7 @@ def _analyse_frontier(
 
 def _analyse_frontier_with_propagation(
     constraints: list[Constraint],
+    search_stats: dict[str, int] | None = None,
 ) -> tuple[
     Assignment,
     list[tuple[int, int]],  # forced_mine_cells
@@ -749,7 +752,10 @@ def _analyse_frontier_with_propagation(
     that every search branch immediately propagates the basic rules, allowing
     it to skip forced assignments and reject impossible branches earlier.
     """
-    first_solution = _find_frontier_solution_with_propagation(constraints)
+    first_solution = _find_frontier_solution_with_propagation(
+        constraints,
+        search_stats=search_stats,
+    )
     if first_solution is None:
         raise ValueError("The game state contains contradictory clues.")
 
@@ -762,6 +768,7 @@ def _analyse_frontier_with_propagation(
         opposite_solution = _find_frontier_solution_with_propagation(
             constraints,
             fixed_choices={cell: opposite_value},
+            search_stats=search_stats,
         )
 
         if opposite_solution is None:
@@ -868,6 +875,7 @@ def backtracking_step(state: str) -> tuple[tuple[int, int], str]:  # REQUIRED
 def _solve_game(
     answer_key: str,
     use_propagation: bool,
+    game_stats: dict[str, int] | None = None,
 ) -> list[tuple[tuple[int, int], str]]:
     """Run one game using either pure search or search with propagation.
 
@@ -926,7 +934,10 @@ def _solve_game(
             # decide these deductions or the next click. ``one_solution`` is
             # just one consistent possibility; only the two forced lists are
             # safe to treat as facts about every possible board.
-            _, forced_mines, forced_safe = analyse_frontier(constraints)
+            _, forced_mines, forced_safe = analyse_frontier(
+                constraints,
+                search_stats=game_stats,
+            )
 
             # Mark every logically forced mine so future clue equations can
             # subtract it. These are deductions, not clicks.
@@ -946,6 +957,11 @@ def _solve_game(
                 # same visible board always produces a reproducible choice.
                 cell_to_click = safe_to_click[0]
             else:
+                if game_stats is not None:
+                    # This turn needs a guess because search proved no hidden
+                    # frontier cell safe. The fixed opening click is excluded.
+                    game_stats["guesses"] = game_stats.get("guesses", 0) + 1
+
                 # No safe value is forced. Find cells that can be safe in at
                 # least one consistent world, then prefer the click that would
                 # reveal the most nearby information. This is still a guess.
@@ -957,6 +973,7 @@ def _solve_game(
                     safe_assumption_works = find_frontier_solution(
                         constraints,
                         fixed_choices={candidate: 0},
+                        search_stats=game_stats,
                     ) is not None
                     if safe_assumption_works:
                         possible_safe_guesses.append(candidate)
@@ -997,6 +1014,11 @@ def _solve_game(
         else:
             # At the start there are no clues. Choose a corner for the first
             # click; it has fewer neighbours and often opens useful information.
+            # If the board later has another clue-free area, that click is also
+            # a guess, while the fixed opening click is excluded from the count.
+            if steps and game_stats is not None:
+                game_stats["guesses"] = game_stats.get("guesses", 0) + 1
+
             hidden_cells = []
             for row in range(rows):
                 for column in range(columns):
