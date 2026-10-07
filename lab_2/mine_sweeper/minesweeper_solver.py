@@ -376,6 +376,115 @@ def constraint_propagation(state: str) -> str:  # REQUIRED
     return format_board(grid)
 
 
+def _constraint_remaining(
+    constraint: Constraint,
+    assignments: Assignment,
+) -> tuple[int, list[tuple[int, int]]] | None:
+    """Return remaining mine count and unresolved cells, or None if inconsistent."""
+    assigned_mines = 0
+    unresolved_cells = []
+
+    for cell in constraint.hidden_cells:
+        if cell in assignments:
+            assigned_mines += assignments[cell]
+        else:
+            unresolved_cells.append(cell)
+
+    mines_still_needed = constraint.mines_needed - assigned_mines
+    if mines_still_needed < 0 or mines_still_needed > len(unresolved_cells):
+        return None
+    return mines_still_needed, unresolved_cells
+
+
+def _assign_if_possible(
+    assignments: Assignment,
+    cell: tuple[int, int],
+    value: int,
+) -> bool | None:
+    """Set a cell's value when it does not conflict with an existing choice.
+
+    Return True when the assignment changed, False when it was already set,
+    and None when the requested value contradicts an earlier assignment.
+    """
+    existing_value = assignments.get(cell)
+    if existing_value is not None and existing_value != value:
+        return None
+    if existing_value == value:
+        return False
+    assignments[cell] = value
+    return True
+
+
+def _apply_subset_sum_rules(
+    constraints: list[Constraint],
+    assignments: Assignment,
+) -> bool | None:
+    """Apply pairwise subset-difference rules between clue constraints.
+
+    When one clue's unresolved neighbours differ from another's by a set whose
+    size equals the difference in their remaining mine counts, every cell in
+    the larger exclusive set must be a mine and every cell in the smaller
+    exclusive set must be safe. Return True if any assignment changed, False
+    if nothing changed, and None if a rule contradicts an existing assignment.
+    """
+    changed = False
+
+    for index_a in range(len(constraints)):
+        for index_b in range(index_a + 1, len(constraints)):
+            status_a = _constraint_remaining(constraints[index_a], assignments)
+            status_b = _constraint_remaining(constraints[index_b], assignments)
+            if status_a is None or status_b is None:
+                return None
+
+            mines_a, unresolved_a = status_a
+            mines_b, unresolved_b = status_b
+            set_a = set(unresolved_a)
+            set_b = set(unresolved_b)
+            only_a = set_a - set_b
+            only_b = set_b - set_a
+
+            if mines_a - mines_b == len(only_a):
+                for cell in only_a:
+                    result = _assign_if_possible(assignments, cell, 1)
+                    if result is None:
+                        return None
+                    changed = changed or result
+                for cell in only_b:
+                    result = _assign_if_possible(assignments, cell, 0)
+                    if result is None:
+                        return None
+                    changed = changed or result
+            elif mines_b - mines_a == len(only_b):
+                for cell in only_b:
+                    result = _assign_if_possible(assignments, cell, 1)
+                    if result is None:
+                        return None
+                    changed = changed or result
+                for cell in only_a:
+                    result = _assign_if_possible(assignments, cell, 0)
+                    if result is None:
+                        return None
+                    changed = changed or result
+
+    return changed
+
+
+def advanced_constraint_propagation(state: str) -> str:
+    """Mark mines forced by basic rules plus subset-difference propagation.
+
+    Safe deductions remain internal, matching the Task 2 output contract.
+    """
+    grid = parse_board(state)
+    constraints = extract_constraints(state)
+    propagated = _propagate_assignments(constraints, {}, use_advanced_rules=True)
+    if propagated is None:
+        raise ValueError("The game state contains contradictory clues.")
+
+    for (row, column), value in propagated.items():
+        if value == 1:
+            grid[row][column] = "M"
+    return format_board(grid)
+
 
 # Task 1 -- Backtracking
 
@@ -544,13 +653,16 @@ def _find_frontier_solution(
 def _propagate_assignments(
     constraints: list[Constraint],
     current_assignments: Assignment,
+    *,
+    use_advanced_rules: bool = False,
 ) -> Assignment | None:
-    """Apply the basic all-mines/all-safe rules to one search branch.
+    """Apply propagation rules to one search branch until a fixpoint.
 
     The input is copied, so deductions made here belong only to this branch.
     ``None`` means that some clue cannot reach its required mine count. A
     returned dictionary includes both the original choices and every value
-    forced by repeatedly applying the two basic rules.
+    forced by repeatedly applying the basic rules, and optionally the
+    subset-difference rules used by Task 6.
     """
     assignments = current_assignments.copy()
 
@@ -561,26 +673,11 @@ def _propagate_assignments(
         made_a_deduction = False
 
         for constraint in constraints:
-            assigned_mines = 0
-            unassigned_cells = []
-
-            # Separate this clue's neighbours into already chosen cells and
-            # cells whose value still needs to be decided.
-            for cell in constraint.hidden_cells:
-                if cell in assignments:
-                    assigned_mines += assignments[cell]
-                else:
-                    unassigned_cells.append(cell)
-
-            mines_still_needed = constraint.mines_needed - assigned_mines
-
-            # Too many assigned mines, or too few undecided cells to supply
-            # the remaining mines, means this branch can never be completed.
-            if mines_still_needed < 0:
-                return None
-            if mines_still_needed > len(unassigned_cells):
+            status = _constraint_remaining(constraint, assignments)
+            if status is None:
                 return None
 
+            mines_still_needed, unassigned_cells = status
             if not unassigned_cells:
                 continue
 
@@ -596,8 +693,16 @@ def _propagate_assignments(
                 continue
 
             for cell in unassigned_cells:
-                assignments[cell] = forced_value
-                made_a_deduction = True
+                result = _assign_if_possible(assignments, cell, forced_value)
+                if result is None:
+                    return None
+                made_a_deduction = made_a_deduction or result
+
+        if use_advanced_rules:
+            subset_result = _apply_subset_sum_rules(constraints, assignments)
+            if subset_result is None:
+                return None
+            made_a_deduction = made_a_deduction or subset_result
 
     return assignments
 
@@ -606,6 +711,8 @@ def _find_frontier_solution_with_propagation(
     constraints: list[Constraint],
     fixed_choices: Assignment | None = None,
     search_stats: dict[str, int] | None = None,
+    *,
+    use_advanced_rules: bool = False,
 ) -> Assignment | None:
     """Find one valid frontier assignment, propagating after every guess.
 
@@ -629,9 +736,14 @@ def _find_frontier_solution_with_propagation(
     if any(cell not in cells for cell in assignments):
         return None
 
-    # Propagate assumptions before branching; they may already prove values or
-    # reveal that the caller's hypothesis contradicts a clue.
-    propagated_assignments = _propagate_assignments(constraints, assignments)
+    # Apply advanced subset rules once at the root. Running them on every
+    # search node is O(constraints^2) and dominates runtime on large boards.
+    # Branch nodes keep the cheaper basic all-mines / all-safe rules.
+    propagated_assignments = _propagate_assignments(
+        constraints,
+        assignments,
+        use_advanced_rules=use_advanced_rules,
+    )
     if propagated_assignments is None:
         return None
     assignments = propagated_assignments
@@ -675,11 +787,12 @@ def _find_frontier_solution_with_propagation(
             branch_assignments = current_assignments.copy()
             branch_assignments[cell] = value
 
-            # Immediately propagate this choice. A contradiction kills this
-            # branch; otherwise continue with all of its forced consequences.
+            # Immediately propagate this choice with basic rules only. Advanced
+            # subset checks already ran at the root for this hypothesis tree.
             propagated_branch = _propagate_assignments(
                 constraints,
                 branch_assignments,
+                use_advanced_rules=False,
             )
             if propagated_branch is None:
                 continue
@@ -753,6 +866,8 @@ def _analyse_frontier(
 def _analyse_frontier_with_propagation(
     constraints: list[Constraint],
     search_stats: dict[str, int] | None = None,
+    *,
+    use_advanced_rules: bool = False,
 ) -> tuple[
     Assignment,
     list[tuple[int, int]],  # forced_mine_cells
@@ -762,12 +877,13 @@ def _analyse_frontier_with_propagation(
 
     The method is the same as ``_analyse_frontier``: find one valid world,
     then test whether each cell can take its opposite value. The difference is
-    that every search branch immediately propagates the basic rules, allowing
+    that every search branch immediately propagates deduction rules, allowing
     it to skip forced assignments and reject impossible branches earlier.
     """
     first_solution = _find_frontier_solution_with_propagation(
         constraints,
         search_stats=search_stats,
+        use_advanced_rules=use_advanced_rules,
     )
     if first_solution is None:
         raise ValueError("The game state contains contradictory clues.")
@@ -782,6 +898,7 @@ def _analyse_frontier_with_propagation(
             constraints,
             fixed_choices={cell: opposite_value},
             search_stats=search_stats,
+            use_advanced_rules=use_advanced_rules,
         )
 
         if opposite_solution is None:
@@ -889,6 +1006,8 @@ def _solve_game(
     answer_key: str,
     use_propagation: bool,
     game_stats: dict[str, int] | None = None,
+    *,
+    use_advanced_rules: bool = False,
 ) -> list[tuple[tuple[int, int], str]]:
     """Run one game using either pure search or search with propagation.
 
@@ -935,8 +1054,14 @@ def _solve_game(
         # Select one search implementation for this entire turn. The pure
         # version checks only whether partial assignments can still fit. The
         # Task 3 version also fills any values forced by the basic rules.
-        if use_propagation:
-            analyse_frontier = _analyse_frontier_with_propagation
+        # Task 6 adds pairwise subset-difference rules during propagation.
+        if use_propagation or use_advanced_rules:
+            def analyse_frontier(constraints, search_stats=None):
+                return _analyse_frontier_with_propagation(
+                    constraints,
+                    search_stats=search_stats,
+                    use_advanced_rules=use_advanced_rules,
+                )
         else:
             analyse_frontier = _analyse_frontier
 
@@ -1282,4 +1407,8 @@ def classify_difficulty(state: str) -> str:  # REQUIRED
 def advanced_solver(answer_key: str) -> list[tuple[tuple[int, int], str]]:  # REQUIRED
     """Same as backtrack_constraint, but using the advanced propagation
     technique(s) described in your report."""
-    raise NotImplementedError
+    return _solve_game(
+        answer_key,
+        use_propagation=True,
+        use_advanced_rules=True,
+    )

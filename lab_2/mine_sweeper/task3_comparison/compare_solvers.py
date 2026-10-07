@@ -1,8 +1,14 @@
-"""Compare the two complete-game solvers on the saved benchmark board suites.
+"""Compare the three complete-game solvers on the saved benchmark board suites.
 
 Run from this folder with ``python compare_solvers.py``. Reports are saved in
-``results/``. The default run uses at most 25 intermediate and 3 expert boards.
-Use ``--suite`` to select a suite or ``--limit`` to override the per-suite limits.
+``results/``. The default run uses 10 beginner boards and 3 intermediate
+boards only. Use ``--suite`` to select a suite or ``--limit`` to override the
+per-suite limits.
+
+Solvers compared:
+- pure backtracking (Task 1)
+- backtracking + basic propagation (Task 3)
+- backtracking + advanced (subset-difference) propagation (Task 6)
 """
 
 import argparse
@@ -26,6 +32,12 @@ SUITE_HEADER = re.compile(
     r"# suite (?P<name>\S+) rows=(?P<rows>\d+) cols=(?P<columns>\d+) mines=(?P<mines>\d+)"
 )
 BOARD_HEADER = re.compile(r"## board (?P<number>\d+)")
+
+SOLVER_ORDER = (
+    ("pure backtracking", {"use_propagation": False, "use_advanced_rules": False}),
+    ("backtracking + propagation", {"use_propagation": True, "use_advanced_rules": False}),
+    ("advanced solver", {"use_propagation": True, "use_advanced_rules": True}),
+)
 
 
 @dataclass
@@ -164,7 +176,12 @@ def read_suites(path: Path) -> list[BoardSuite]:
     return suites
 
 
-def run_solver(use_propagation: bool, boards: list[str]) -> SolverResults:
+def run_solver(
+    boards: list[str],
+    *,
+    use_propagation: bool,
+    use_advanced_rules: bool = False,
+) -> SolverResults:
     """Play every board and collect outcome, guessing, search, and timing data."""
     results = SolverResults()
     for answer_key in boards:
@@ -176,6 +193,7 @@ def run_solver(use_propagation: bool, boards: list[str]) -> SolverResults:
             answer_key,
             use_propagation=use_propagation,
             game_stats=game_stats,
+            use_advanced_rules=use_advanced_rules,
         )
         game_seconds = time.perf_counter() - start_time
         results.elapsed_seconds += game_seconds
@@ -198,8 +216,34 @@ def run_solver(use_propagation: bool, boards: list[str]) -> SolverResults:
     return results
 
 
-def print_suite_results(name: str, board_count: int, plain: SolverResults,
-                        propagated: SolverResults) -> str:
+def format_result_row(solver_name: str, results: SolverResults, board_count: int) -> str:
+    """Format one solver's totals as a Markdown table row."""
+    games_after_opening_mine = board_count - results.first_move_losses
+    win_rate_after_opening = (
+        100 * results.wins / games_after_opening_mine
+        if games_after_opening_mine
+        else 0.0
+    )
+    average_winning_moves = (
+        results.winning_clicks / results.wins if results.wins else 0.0
+    )
+    return (
+        f"| {solver_name} | {results.wins} | {results.losses} "
+        f"({results.first_move_losses}) | {win_rate_after_opening:.1f}% "
+        f"| {results.clicks / board_count:.2f} "
+        f"| {average_winning_moves:.2f} "
+        f"| {results.guesses / board_count:.2f} "
+        f"| {results.search_nodes / board_count:.0f} "
+        f"| {results.elapsed_seconds * 1000 / board_count:.2f} "
+        f"({results.longest_game_seconds * 1000:.0f}) |"
+    )
+
+
+def print_suite_results(
+    name: str,
+    board_count: int,
+    results_by_solver: dict[str, SolverResults],
+) -> str:
     """Format the game and search measures as a Markdown table."""
     table_lines = [
         f"## {name} ({board_count} boards)",
@@ -209,30 +253,24 @@ def print_suite_results(name: str, board_count: int, plain: SolverResults,
         "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
 
-    for solver_name, results in (
-        ("pure backtracking", plain),
-        ("backtracking + propagation", propagated),
-    ):
-        games_after_opening_mine = board_count - results.first_move_losses
-        win_rate_after_opening = (
-            100 * results.wins / games_after_opening_mine
-            if games_after_opening_mine
-            else 0.0
-        )
-        average_winning_moves = (
-            results.winning_clicks / results.wins if results.wins else 0.0
-        )
+    for solver_name, _ in SOLVER_ORDER:
         table_lines.append(
-            f"| {solver_name} | {results.wins} | {results.losses} "
-            f"({results.first_move_losses}) | {win_rate_after_opening:.1f}% "
-            f"| {results.clicks / board_count:.2f} "
-            f"| {average_winning_moves:.2f} "
-            f"| {results.guesses / board_count:.2f} "
-            f"| {results.search_nodes / board_count:.0f} "
-            f"| {results.elapsed_seconds * 1000 / board_count:.2f} "
-            f"({results.longest_game_seconds * 1000:.0f}) |"
+            format_result_row(solver_name, results_by_solver[solver_name], board_count)
         )
     return "\n".join(table_lines)
+
+
+def add_results(total: SolverResults, part: SolverResults) -> None:
+    """Accumulate one suite's totals into the overall totals."""
+    total.wins += part.wins
+    total.losses += part.losses
+    total.first_move_losses += part.first_move_losses
+    total.clicks += part.clicks
+    total.winning_clicks += part.winning_clicks
+    total.guesses += part.guesses
+    total.search_nodes += part.search_nodes
+    total.elapsed_seconds += part.elapsed_seconds
+    total.longest_game_seconds = max(total.longest_game_seconds, part.longest_game_seconds)
 
 
 def main() -> None:
@@ -262,15 +300,15 @@ def main() -> None:
     print(f"Validated {total_boards} boards from {args.file.name}.")
     print("Running benchmark suites; progress will be shown here.")
 
-    totals_plain = SolverResults()
-    totals_propagated = SolverResults()
+    totals = {name: SolverResults() for name, _ in SOLVER_ORDER}
     total_count = 0
     report_sections = [
         "# Minesweeper Solver Benchmark",
         "",
         f"Board source: `{args.file.name}` ({total_boards} validated answer boards).",
-        "Both solvers play the same selected boards using the same deterministic "
-        "click policy. Timing measures solving only.",
+        "All three solvers play the same selected boards using the same "
+        "deterministic click policy (corner opening, least-risk frontier guess). "
+        "Timing measures solving only.",
         "",
         "Search nodes count tried safe/mine branch values, including failed "
         "trials. Values forced by propagation are deductions and are not counted.",
@@ -279,57 +317,47 @@ def main() -> None:
         "",
     ]
 
-    # Bound the expensive large-board suites by default while keeping every
-    # board in the smaller suites. --limit explicitly overrides these caps.
+    # Tiny default sample so the three-solver comparison finishes quickly.
+    # --limit overrides these caps; suites with limit 0 are skipped.
     default_limits = {
-        "intermediate_16x16_40": 25,
-        "expert_16x30_99": 3,
+        "beginner_9x9_10": 10,
+        "dense_9x9_15": 5,
+        "intermediate_16x16_40": 1,
+        "expert_16x30_99": 0,
+        "rectangular_9x12_16": 0,
     }
 
     for suite_index, suite in enumerate(suites):
-        board_limit = args.limit or default_limits.get(suite.name, len(suite.boards))
+        board_limit = args.limit if args.limit is not None else default_limits.get(suite.name, 0)
+        if board_limit <= 0:
+            print(f"Skipping {suite.name} (default sample excludes this suite).", flush=True)
+            continue
         boards = suite.boards[:board_limit]
         print(f"Running {suite.name}: {len(boards)} of {len(suite.boards)} boards...", flush=True)
-        # Alternate which solver runs first per suite to reduce systematic
-        # timing bias from one implementation always running first.
-        if suite_index % 2 == 0:
-            plain = run_solver(use_propagation=False, boards=boards)
-            propagated = run_solver(use_propagation=True, boards=boards)
-        else:
-            propagated = run_solver(use_propagation=True, boards=boards)
-            plain = run_solver(use_propagation=False, boards=boards)
+
+        # Rotate which solver runs first per suite to reduce systematic timing
+        # bias from one implementation always running first.
+        ordered = list(SOLVER_ORDER)
+        rotate_by = suite_index % len(ordered)
+        ordered = ordered[rotate_by:] + ordered[:rotate_by]
+
+        suite_results: dict[str, SolverResults] = {}
+        for solver_name, options in ordered:
+            print(f"  {solver_name}...", flush=True)
+            suite_results[solver_name] = run_solver(boards, **options)
 
         report_sections.append(
-            print_suite_results(suite.name, len(boards), plain, propagated)
+            print_suite_results(suite.name, len(boards), suite_results)
         )
         print(f"Finished {suite.name}.", flush=True)
-        totals_plain.wins += plain.wins
-        totals_plain.losses += plain.losses
-        totals_plain.first_move_losses += plain.first_move_losses
-        totals_plain.clicks += plain.clicks
-        totals_plain.winning_clicks += plain.winning_clicks
-        totals_plain.guesses += plain.guesses
-        totals_plain.search_nodes += plain.search_nodes
-        totals_plain.elapsed_seconds += plain.elapsed_seconds
-        totals_plain.longest_game_seconds = max(
-            totals_plain.longest_game_seconds, plain.longest_game_seconds
-        )
-        totals_propagated.wins += propagated.wins
-        totals_propagated.losses += propagated.losses
-        totals_propagated.first_move_losses += propagated.first_move_losses
-        totals_propagated.clicks += propagated.clicks
-        totals_propagated.winning_clicks += propagated.winning_clicks
-        totals_propagated.guesses += propagated.guesses
-        totals_propagated.search_nodes += propagated.search_nodes
-        totals_propagated.elapsed_seconds += propagated.elapsed_seconds
-        totals_propagated.longest_game_seconds = max(
-            totals_propagated.longest_game_seconds, propagated.longest_game_seconds
-        )
+
+        for solver_name, _ in SOLVER_ORDER:
+            add_results(totals[solver_name], suite_results[solver_name])
         total_count += len(boards)
 
     if len(suites) > 1:
         report_sections.append(
-            print_suite_results("Overall", total_count, totals_plain, totals_propagated)
+            print_suite_results("Overall", total_count, totals)
         )
 
     # Each section may already include Markdown spacing; trimming first keeps
