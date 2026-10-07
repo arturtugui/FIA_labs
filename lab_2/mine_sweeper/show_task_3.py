@@ -1,7 +1,7 @@
 """Compare pure backtracking with Task 3's propagation-enhanced solver.
 
 Change ANSWER_KEY below to compare both solvers on another complete board.
-Run from this folder with ``python show_task_4.py``.
+Run from this folder with ``python show_task_3.py``.
 """
 
 from minesweeper_solver import (
@@ -31,7 +31,7 @@ for _ in key_grid:
     starting_board.append(["X"] * len(key_grid[0]))
 
 print("Task 3 comparison: pure backtracking vs. backtracking + propagation")
-print("Both solvers use this same 5x5 answer key, the one from show_task_3_back_solve.py.")
+print("Both solvers use this same 5x5 answer key, the one from show_task_1_back_solve.py.")
 print(f"Pure backtracking: {len(pure_steps)} click(s)")
 print(f"Backtracking + propagation: {len(combined_steps)} click(s)")
 print(f"Click-count difference: {len(pure_steps) - len(combined_steps):+d} (positive means propagation used fewer)")

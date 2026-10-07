@@ -1,174 +1,242 @@
-"""Checks for Task 3. Run with ``python test_task_3.py --show``."""
+"""Tests for Phase 4 / lab Task 3: backtracking with propagation.
+
+Run from this folder with ``python test_task_3.py``.
+"""
 
 import argparse
-import random
-import sys
+import itertools
 import unittest
 
 from minesweeper_solver import (
+    Constraint,
+    _assignment_is_consistent,
+    _find_frontier_solution,
+    _find_frontier_solution_with_propagation,
+    _frontier_cells,
+    _propagate_assignments,
+    backtrack_constraint,
     backtracking_solve,
-    backtracking_step,
     generate_key,
     is_won,
     parse_board,
 )
 
 
-ANSWER_KEY = """2 M 1 1 M
-M 2 1 1 1
-2 2 . . .
-M 2 . . .
-M 2 . . ."""
+def chain_constraints():
+    """Make a small CSP where one guess triggers a chain of basic deductions.
 
-LAB_GAME_STATE = """2 X X X X
-X 2 1 1 X
-2 2 . . .
-X 2 . . .
-X 2 . . ."""
+    The constraints mean:
+      A: a + b = 1
+      B: b + c + d = 1
+      C: c + d = 1
 
-SHOW_EXAMPLES = False
-
-
-def show_game_trace():
-    """Display actual presses from the all-hidden start of the game."""
-    key_grid = parse_board(ANSWER_KEY)
-    starting_grid = [["X" for _ in row] for row in key_grid]
-    trace_lines = [
-        "Game trace: each move is an actual click, so the board can reveal clues.",
-        "Starting board (all cells hidden):",
-        "\n".join(" ".join(row) for row in starting_grid),
+    If search first tries ``b = safe``, A forces ``a = mine``. Then choosing
+    ``c = safe`` makes both B and C force ``d = mine``. This lets us see the
+    difference between branching on each value and propagating consequences.
+    """
+    a = (0, 0)
+    b = (0, 1)
+    c = (0, 2)
+    d = (0, 3)
+    return [
+        Constraint(hidden_cells=[a, b], mines_needed=1),
+        Constraint(hidden_cells=[b, c, d], mines_needed=1),
+        Constraint(hidden_cells=[c, d], mines_needed=1),
     ]
 
-    steps = backtracking_solve(ANSWER_KEY)
-    for move_number, (cell, state_after) in enumerate(steps, start=1):
-        trace_lines.append(f"\nAfter press {move_number}, clicked cell {cell}:")
-        trace_lines.append(state_after)
 
-    if steps:
-        final_state = steps[-1][1]
-        if is_won(ANSWER_KEY, final_state):
-            trace_lines.append("\nGame result: won")
-        else:
-            clicked_row, clicked_column = steps[-1][0]
-            if parse_board(final_state)[clicked_row][clicked_column] == "M":
-                trace_lines.append("\nGame result: lost (the press hit a mine)")
+class PropagationSearchTests(unittest.TestCase):
+    def test_propagation_follows_forced_values_until_a_fixpoint(self):
+        constraints = chain_constraints()
+        b = (0, 1)
+        c = (0, 2)
+        a = (0, 0)
+        d = (0, 3)
 
-    # Print the trace in one flushed block so it appears before unittest's
-    # progress dots instead of being buffered until the test run ends.
-    print("\n".join(trace_lines), flush=True)
+        # Assuming b is safe makes A require a mine in a. After also assuming
+        # c safe, constraints B and C both require d to be a mine.
+        after_first_guess = _propagate_assignments(constraints, {b: 0})
+        self.assertEqual(after_first_guess, {b: 0, a: 1})
 
+        after_second_guess = _propagate_assignments(
+            constraints,
+            {b: 0, c: 0},
+        )
+        self.assertEqual(after_second_guess, {b: 0, a: 1, c: 0, d: 1})
 
-class BacktrackingTests(unittest.TestCase):
-    def test_step_makes_a_first_guess_on_an_all_hidden_board(self):
-        # With no revealed clues, search has no constraints to apply. The
-        # documented first-move rule is therefore to choose the top-left cell.
-        all_hidden = "X X X\nX X X\nX X X"
-        first_cell, board_after_first_check = backtracking_step(all_hidden)
-        second_cell, board_after_second_check = backtracking_step(
-            board_after_first_check
+    def test_propagation_rejects_a_contradictory_branch(self):
+        constraints = chain_constraints()
+        # A needs one mine, but this branch assigns both neighbours safe.
+        impossible = _propagate_assignments(
+            constraints,
+            {(0, 0): 0, (0, 1): 0},
+        )
+        self.assertIsNone(impossible)
+
+    def test_propagation_search_has_the_same_solutions_as_pure_search(self):
+        constraints = chain_constraints()
+        cells = _frontier_cells(constraints)
+        pure_solutions = set()
+        propagated_solutions = set()
+
+        # Enumerate every complete assignment for this tiny four-cell example.
+        # The pure consistency check defines the expected solution set, while
+        # the propagation search must accept exactly those same assignments.
+        for values in itertools.product((0, 1), repeat=len(cells)):
+            complete_assignment = dict(zip(cells, values))
+            if _assignment_is_consistent(constraints, complete_assignment):
+                pure_solutions.add(values)
+
+            propagated_result = _find_frontier_solution_with_propagation(
+                constraints,
+                fixed_choices=complete_assignment,
+            )
+            if propagated_result is not None:
+                propagated_solutions.add(values)
+
+        self.assertEqual(pure_solutions, propagated_solutions)
+        self.assertEqual(len(pure_solutions), 2)
+
+    def test_propagation_reduces_branching_on_the_chain_example(self):
+        constraints = chain_constraints()
+        pure_node_count = {"nodes": 0}
+        propagated_node_count = {"nodes": 0}
+
+        pure_solution = _find_frontier_solution(
+            constraints,
+            search_stats=pure_node_count,
+        )
+        propagated_solution = _find_frontier_solution_with_propagation(
+            constraints,
+            search_stats=propagated_node_count,
         )
 
-        self.assertEqual(first_cell, (0, 0))
-        self.assertEqual(second_cell, (0, 1))
-        # Since this function has no answer key, it can choose a cell but
-        # cannot reveal its value; the visible board remains all X.
-        self.assertEqual(board_after_first_check, all_hidden)
-        self.assertEqual(board_after_second_check, all_hidden)
+        self.assertIsNotNone(pure_solution)
+        self.assertIsNotNone(propagated_solution)
+        self.assertTrue(_assignment_is_consistent(constraints, pure_solution))
+        self.assertTrue(
+            _assignment_is_consistent(constraints, propagated_solution)
+        )
+        self.assertLess(
+            propagated_node_count["nodes"],
+            pure_node_count["nodes"],
+        )
 
-    def test_step_marks_a_mine_only_when_search_proves_it(self):
-        state = LAB_GAME_STATE
-        checked_cells = []
-        for step_number in range(5):
-            cell, after = backtracking_step(state)
-            self.assertNotEqual(cell, (-1, -1))
-            self.assertNotIn(cell, checked_cells)
-            checked_cells.append(cell)
+    def test_combined_solver_produces_valid_traces_on_generated_games(self):
+        # Use identical fixed-seed keys so both algorithms face the same games.
+        for seed in range(100):
+            answer_key = generate_key(9, 9, 10, seed=seed)
+            pure_steps = backtracking_solve(answer_key)
+            propagated_steps = backtrack_constraint(answer_key)
 
-            before_grid = parse_board(state)
-            after_grid = parse_board(after)
-            for row in range(len(before_grid)):
-                for column in range(len(before_grid[0])):
-                    if before_grid[row][column] != after_grid[row][column]:
-                        self.assertEqual(before_grid[row][column], "X")
-                        self.assertEqual(after_grid[row][column], "M")
-                        self.assertEqual(parse_board(ANSWER_KEY)[row][column], "M")
+            self.assertTrue(pure_steps, msg=f"pure solver seed={seed}")
+            self.assertTrue(propagated_steps, msg=f"combined solver seed={seed}")
 
-            state = after
+            # The two algorithms use the same move policy, so compare results
+            # on each generated board while validating the combined trace.
+            pure_won = is_won(answer_key, pure_steps[-1][1])
+            combined_won = is_won(answer_key, propagated_steps[-1][1])
+            self.assertGreaterEqual(
+                int(combined_won),
+                int(pure_won),
+                msg=f"combined solver lost a game pure solver won (seed={seed})",
+            )
 
-    def test_step_advances_on_a_fresh_board_and_handles_no_hidden_cells(self):
-        fresh_state = "X X X X"
-        first_cell, first_board = backtracking_step(fresh_state)
-        second_cell, second_board = backtracking_step(first_board)
+            key_grid = parse_board(answer_key)
+            previous_grid = [["X"] * len(key_grid[0]) for _ in key_grid]
+            for step_number, (clicked_cell, board_after) in enumerate(
+                propagated_steps,
+                start=1,
+            ):
+                clicked_row, clicked_column = clicked_cell
+                self.assertEqual(
+                    previous_grid[clicked_row][clicked_column],
+                    "X",
+                    msg=f"seed={seed}, step={step_number}: clicked a visible cell",
+                )
 
-        self.assertEqual(first_cell, (0, 0))
-        self.assertEqual(second_cell, (0, 1))
-        self.assertEqual(first_board, fresh_state)
-        self.assertEqual(second_board, fresh_state)
+                after_grid = parse_board(board_after)
+                for row in range(len(key_grid)):
+                    for column in range(len(key_grid[0])):
+                        old_value = previous_grid[row][column]
+                        new_value = after_grid[row][column]
+                        if old_value == new_value:
+                            continue
 
-        finished_cell, finished_board = backtracking_step(". .\n. .")
-        self.assertEqual(finished_cell, (-1, -1))
-        self.assertEqual(finished_board, ". .\n. .")
-
-    def test_solver_trace_uses_real_clicks_and_ends_won_or_lost(self):
-        steps = backtracking_solve(ANSWER_KEY)
-        key_grid = parse_board(ANSWER_KEY)
-        self.assertTrue(steps)
-
-        previous_grid = [["X"] * len(key_grid[0]) for _ in range(len(key_grid))]
-        lost = False
-
-        for step_number, (cell, state_after) in enumerate(steps, start=1):
-            row, column = cell
-            self.assertEqual(previous_grid[row][column], "X")
-            after_grid = parse_board(state_after)
-
-            # Every newly visible answer must match the key. Search may also
-            # mark a proven mine, but it must never mark a safe cell as M.
-            for board_row in range(len(key_grid)):
-                for board_column in range(len(key_grid[0])):
-                    old_cell = previous_grid[board_row][board_column]
-                    new_cell = after_grid[board_row][board_column]
-                    if old_cell != new_cell:
-                        self.assertEqual(old_cell, "X")
-                        if new_cell == "M":
-                            self.assertEqual(key_grid[board_row][board_column], "M")
+                        self.assertEqual(old_value, "X")
+                        if new_value == "M":
+                            self.assertEqual(key_grid[row][column], "M")
                         else:
-                            self.assertEqual(new_cell, key_grid[board_row][board_column])
+                            self.assertEqual(new_value, key_grid[row][column])
 
-            if key_grid[row][column] == "M":
-                self.assertEqual(after_grid[row][column], "M")
-                self.assertEqual(step_number, len(steps))
-                lost = True
-            previous_grid = after_grid
+                # A mine can only end the trace; safe clicks must eventually
+                # finish in a win if they are the final recorded move.
+                if key_grid[clicked_row][clicked_column] == "M":
+                    self.assertEqual(step_number, len(propagated_steps))
+                    self.assertEqual(after_grid[clicked_row][clicked_column], "M")
 
-        if lost:
-            self.assertFalse(is_won(ANSWER_KEY, steps[-1][1]))
-        else:
-            self.assertTrue(is_won(ANSWER_KEY, steps[-1][1]))
+                previous_grid = after_grid
 
-    def test_solver_terminates_on_reproducible_generated_boards(self):
-        number_of_boards = 200
+            final_cell = propagated_steps[-1][0]
+            final_key_value = key_grid[final_cell[0]][final_cell[1]]
+            if final_key_value != "M":
+                self.assertTrue(is_won(answer_key, propagated_steps[-1][1]))
 
-        for seed in range(number_of_boards):
-            key = generate_key(9, 9, 10, seed=seed)
-            steps = backtracking_solve(key)
-            self.assertTrue(steps, msg=f"seed={seed}: solver returned no moves")
 
-            final_board = steps[-1][1]
-            final_cell = steps[-1][0]
-            final_grid = parse_board(final_board)
-            key_grid = parse_board(key)
+def show_propagation_example():
+    """Print one short branch and the search-node comparison it creates."""
+    constraints = chain_constraints()
+    pure_node_count = {"nodes": 0}
+    propagated_node_count = {"nodes": 0}
 
-            if key_grid[final_cell[0]][final_cell[1]] == "M":
-                self.assertEqual(final_grid[final_cell[0]][final_cell[1]], "M")
-            else:
-                self.assertTrue(is_won(key, final_board), msg=f"seed={seed}")
+    _find_frontier_solution(constraints, search_stats=pure_node_count)
+    _find_frontier_solution_with_propagation(
+        constraints,
+        search_stats=propagated_node_count,
+    )
+
+    after_guess = _propagate_assignments(constraints, {(0, 1): 0})
+    after_next_guess = _propagate_assignments(
+        constraints,
+        {(0, 1): 0, (0, 2): 0},
+    )
+
+    print("\nExample: how one trial can force other cells")
+    print("  Start with the trial b = safe.")
+    print(f"  Propagation then gives: {after_guess}")
+    print("  Also try c = safe.")
+    print(f"  Propagation now gives: {after_next_guess}")
+    print("  Search nodes count trial mine/safe choices, not forced values.")
+    print(f"  Pure backtracking tried {pure_node_count['nodes']} value(s).")
+    print(
+        "  Backtracking with propagation tried "
+        f"{propagated_node_count['nodes']} value(s)."
+    )
+
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Check Minesweeper Task 3 backtracking.")
-    parser.add_argument("--show", action="store_true",
-                        help="show actual click-by-click game progress")
-    SHOW_EXAMPLES = parser.parse_args().show
-    if SHOW_EXAMPLES:
-        show_game_trace()
-    unittest.main(argv=[sys.argv[0]])
+    parser = argparse.ArgumentParser(
+        description="Check Task 3: backtracking with constraint propagation (roadmap Phase 4)."
+    )
+    parser.add_argument(
+        "--show",
+        action="store_true",
+        help="print a small explanation of propagation and search-node counts",
+    )
+    arguments = parser.parse_args()
+
+    test_suite = unittest.defaultTestLoader.loadTestsFromTestCase(
+        PropagationSearchTests
+    )
+    test_result = unittest.TextTestRunner(verbosity=0).run(test_suite)
+
+    if test_result.wasSuccessful():
+        print("\nPhase 4 checks passed:")
+        print("  - Propagation reaches forced values and rejects contradictions.")
+        print("  - Propagation search preserves the pure solver's solutions.")
+        print("  - Propagation reduces branching on the demonstration constraints.")
+        print("  - Both solvers were compared on 100 fixed-seed 9x9 games.")
+        if arguments.show:
+            show_propagation_example()
+
+    raise SystemExit(not test_result.wasSuccessful())
