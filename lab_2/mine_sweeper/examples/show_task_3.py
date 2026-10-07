@@ -4,6 +4,12 @@ Change ANSWER_KEY below to compare both solvers on another complete board.
 Run from this folder with ``python show_task_3.py``.
 """
 
+from pathlib import Path
+import sys
+
+# The solver module is in the parent folder because this demo lives in examples/.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from minesweeper_solver import (
     backtrack_constraint,
     backtracking_solve,

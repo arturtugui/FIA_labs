@@ -1,5 +1,11 @@
 """Show one search check on an editable game state (not an actual click)."""
 
+from pathlib import Path
+import sys
+
+# The solver module is in the parent folder because this demo lives in examples/.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from minesweeper_solver import backtracking_step
 
 

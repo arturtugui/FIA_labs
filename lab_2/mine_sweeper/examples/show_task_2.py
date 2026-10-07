@@ -1,5 +1,11 @@
 """Quick demo: replace GAME_STATE with any game-state board and run this file."""
 
+from pathlib import Path
+import sys
+
+# The solver module is in the parent folder because this demo lives in examples/.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from minesweeper_solver import constraint_propagation
 
 

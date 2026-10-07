@@ -1,5 +1,11 @@
 """Show the complete move trace from an all-hidden board."""
 
+from pathlib import Path
+import sys
+
+# The solver module is in the parent folder because this demo lives in examples/.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from minesweeper_solver import backtracking_solve, is_won, parse_board
 
 
