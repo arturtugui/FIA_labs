@@ -28,6 +28,11 @@ import random
 from typing import NamedTuple
 
 
+# A cell assignment maps a coordinate to its assumed status during search:
+# 1 means mine and 0 means safe.
+Assignment = dict[tuple[int, int], int]
+
+
 # FOUNDATION FUNCTIONS
 
 class Constraint(NamedTuple):
@@ -39,6 +44,12 @@ class Constraint(NamedTuple):
 
     hidden_cells: list[tuple[int, int]]
     mines_needed: int
+
+
+# backtracking_step has no answer key, so it cannot reveal a safe cell's clue.
+# Remember which cells it has already checked when the caller feeds the same
+# board back in; otherwise a safe/uncertain check would repeat forever.
+_BACKTRACKING_STEP_CHECKED: dict[str, set[tuple[int, int]]] = {}
 
 def parse_board(text: str) -> list[list[str]]:
     """Convert a space-separated board string into a list of rows.
@@ -354,15 +365,446 @@ def constraint_propagation(state: str) -> str:  # REQUIRED
 
 
 # Task 1 -- Backtracking
+
+def _frontier_cells(constraints: list[Constraint]) -> list[tuple[int, int]]:
+    """Return unique hidden coordinates that appear in at least one clue."""
+    cells = set()
+    for constraint in constraints:
+        cells.update(constraint.hidden_cells)
+    return sorted(cells)
+
+
+def _hidden_neighbour_count(
+    grid: list[list[str]],
+    cell: tuple[int, int],
+) -> int:
+    """Count currently hidden neighbours, as a simple information heuristic."""
+    rows = len(grid)
+    columns = len(grid[0])
+    row, column = cell
+    hidden_count = 0
+
+    for neighbour_row, neighbour_column in neighbours(row, column, rows, columns):
+        if grid[neighbour_row][neighbour_column] == "X":
+            hidden_count += 1
+
+    return hidden_count
+
+
+def _assignment_is_consistent(
+    constraints: list[Constraint],
+    assignments: Assignment,
+) -> bool:
+    """Check whether the current search choices can still satisfy all clues.
+
+    ``assignments`` maps a cell coordinate such as ``(row, column)`` to a
+    temporary value: 1 means the search is trying that cell as a mine, and 0
+    means it is trying the cell as safe. A cell absent from the dictionary has
+    not been tried yet.
+
+    The function checks each clue independently and returns False as soon as
+    one clue can no longer be satisfied. Returning True means only that no
+    contradiction has been found so far; undecided cells may remain.
+    """
+    for constraint in constraints:
+        assigned_mines = 0
+        unassigned_count = 0
+
+        # Look only at the hidden neighbours that belong to this clue.
+        for cell in constraint.hidden_cells:
+            if cell in assignments:
+                # Adding a 1 counts a mine; adding a 0 leaves the count alone
+                # for a cell the search has assumed safe.
+                assigned_mines += assignments[cell]
+            else:
+                # Any of these cells could still become a mine and help meet
+                # the clue's required count.
+                unassigned_count += 1
+
+        # If we already chose more mines than the clue allows, undoing a later
+        # choice cannot fix this branch: its current assumptions are wrong.
+        if assigned_mines > constraint.mines_needed:
+            return False
+
+        # Even turning every undecided neighbour into a mine would not be
+        # enough here, so no continuation of this branch can satisfy the clue.
+        if assigned_mines + unassigned_count < constraint.mines_needed:
+            return False
+
+    # Every clue can still reach its target. Search may continue assigning
+    # cells; this is not yet proof that the whole board is solved.
+    return True
+
+
+def _find_frontier_solution(
+    constraints: list[Constraint],
+    fixed_choices: Assignment | None = None,
+) -> Assignment | None:
+    """Find one complete assignment that satisfies all frontier clues.
+
+    Args:
+        constraints: The clue equations from the current visible game state.
+        fixed_choices: Optional assumptions to hold constant while searching.
+            For example, ``{(2, 3): 1}`` asks whether cell ``(2, 3)`` can be a
+            mine in any valid solution.
+
+    The function returns a dictionary assigning every frontier cell 0 (safe)
+    or 1 (mine). It returns None when the assumptions make all solutions
+    impossible. Cells outside the frontier are not included because no clue
+    currently constrains them.
+    """
+    cells = _frontier_cells(constraints)
+    assignments = dict(fixed_choices or {})
+
+    # An assumption about an interior cell cannot be checked using frontier
+    # clues, so treat that request as having no solution in this search.
+    if any(cell not in cells for cell in assignments):
+        return None
+
+    # Catch impossible assumptions before starting the recursive search.
+    if not _assignment_is_consistent(constraints, assignments):
+        return None
+
+    # Cells touching more clues can expose contradictions sooner. Start with
+    # row-major order, then stably move high-degree cells to the front so ties
+    # are deterministic for the same board.
+    def constraint_count(cell: tuple[int, int]) -> int:
+        """Count how many separate clues mention this cell."""
+        count = 0
+        for constraint in constraints:
+            if cell in constraint.hidden_cells:
+                count += 1
+        return count
+
+    ordered_cells = sorted(cells)
+    ordered_cells.sort(key=constraint_count, reverse=True)
+
+    def search(next_index: int) -> bool:
+        """Try values recursively, leaving a full assignment on success."""
+        # Skip cells already decided by fixed_choices; search must not replace
+        # the assumption being tested with a different value.
+        while next_index < len(ordered_cells) and ordered_cells[next_index] in assignments:
+            next_index += 1
+
+        # Reaching the end means every frontier cell has a value. If all clue
+        # bounds still hold, these choices form one complete valid world.
+        if next_index == len(ordered_cells):
+            return _assignment_is_consistent(constraints, assignments)
+
+        cell = ordered_cells[next_index]
+
+        # Try safe first to make the search deterministic. This ordering is a
+        # convenience only; it is not evidence that safe is the correct value.
+        for value in (0, 1):
+            assignments[cell] = value
+
+            # If this partial choice has already broken a clue, do not waste
+            # time assigning the rest of the cells below this branch.
+            if _assignment_is_consistent(constraints, assignments):
+                if search(next_index + 1):
+                    return True
+
+            # This branch failed. Remove its temporary choice before trying
+            # the other value for the same cell.
+            del assignments[cell]
+
+        return False
+
+    if search(0):
+        return assignments.copy()
+    return None
+
+
+def _analyse_frontier(
+    constraints: list[Constraint],
+) -> tuple[
+    Assignment,
+    list[tuple[int, int]],  # forced_mine_cells
+    list[tuple[int, int]],  # forced_safe_cells
+]:
+    """Find one valid world, then separate certain cells from undecided ones.
+
+    The returned triple is ``(one_solution, forced_mines, forced_safe)``.
+    Here, a "world" means one possible mine/safe choice for every hidden cell
+    touched by a visible clue. The solver does not know which world is the real
+    board; it only knows that any world satisfying all clues is still possible.
+
+    The function works in two passes:
+
+    1. Find one complete assignment that obeys every clue. If none exists,
+       the visible board contradicts itself.
+    2. For each cell in that assignment, temporarily force the opposite value
+       and search again. If no solution exists under that opposite value, the
+       original value must be the same in every valid world, so it is certain.
+
+    For example, suppose the first solution says a cell is a mine. If another
+    valid solution exists with that cell safe, it is not a proven mine and is
+    left out of both certainty lists. If no such solution exists, it goes in
+    ``forced_mines``. The same reasoning identifies ``forced_safe`` cells.
+    """
+    first_solution = _find_frontier_solution(constraints)
+    if first_solution is None:
+        raise ValueError("The game state contains contradictory clues.")
+
+    # These lists contain proofs, not merely the values from the first world.
+    # A cell goes here only after the opposite-value search fails.
+    forced_mines = []
+    forced_safe = []
+
+    for cell, value_in_solution in first_solution.items():
+        # A value in one solution is not necessarily certain. Ask whether a
+        # second solution exists with the opposite value; if not, this cell is
+        # the same in every valid world and is therefore logically forced.
+        opposite_value = 1 - value_in_solution
+        opposite_solution = _find_frontier_solution(
+            constraints,
+            fixed_choices={cell: opposite_value},
+        )
+
+        if opposite_solution is None:
+            if value_in_solution == 1:
+                forced_mines.append(cell)
+            else:
+                forced_safe.append(cell)
+
+    return first_solution, sorted(forced_mines), sorted(forced_safe)
+
+
 def backtracking_step(state: str) -> tuple[tuple[int, int], str]:  # REQUIRED
-    """One step of backtracking on a game state.
-    Returns the cell it checked and the board after checking it."""
-    raise NotImplementedError
+    """Search-check one hidden cell and return its coordinate and board text.
+
+    This function demonstrates one backtracking check without playing a real
+    click. Its steps are:
+
+    1. Read the visible board and turn its numbered clues into constraints.
+    2. Choose a hidden frontier cell (one mentioned by a clue) that this
+       function has not checked yet. If there are no clues, choose any hidden
+       cell because there is not enough information to constrain it.
+    3. Ask the search twice: can the clues still be satisfied if this cell is
+       a mine, and can they still be satisfied if it is safe?
+    4. If only the mine assumption works, mark the cell ``M`` because the
+       clues prove it is a mine. If both values work, it is uncertain. If only
+       safe works, it is known safe but remains ``X`` because this function
+       has no answer key to reveal its number.
+
+    The return value is ``(checked_coordinate, resulting_board_text)``. Since
+    an unchanged board gives the function no visible way to remember a prior
+    safe/uncertain check, ``_BACKTRACKING_STEP_CHECKED`` stores those checks
+    between calls. This is only demonstration progress: a real click would
+    reveal a safe cell and change the board. If no hidden cells remain, the
+    function returns ``((-1, -1), unchanged_board)``.
+    """
+    grid = parse_board(state)
+    constraints = extract_constraints(state)
+    frontier = _frontier_cells(constraints)
+    hidden_cells = []
+    for row in range(len(grid)):
+        for column in range(len(grid[0])):
+            if grid[row][column] == "X":
+                hidden_cells.append((row, column))
+
+    if not hidden_cells:
+        return (-1, -1), format_board(grid)
+
+    # A frontier cell touches at least one revealed clue, so the equations can
+    # test its two possible values. At the all-X start there are no equations;
+    # selecting a cell then only demonstrates the lack of available evidence.
+    candidates = frontier or hidden_cells
+    board_text = format_board(grid)
+    already_checked = _BACKTRACKING_STEP_CHECKED.get(board_text, set())
+    unchecked = [cell for cell in candidates if cell not in already_checked]
+
+    # When every current candidate was already checked, start over. This keeps
+    # the function usable even when the caller requests extra steps.
+    if not unchecked:
+        already_checked = set()
+        unchecked = candidates
+
+    cell = unchecked[0]
+    checked_now = set(already_checked)
+    checked_now.add(cell)
+
+    if frontier:
+        # These are two independent hypothetical searches. Each search keeps
+        # this cell fixed and tries to complete assignments for the other
+        # frontier cells. A returned assignment means the assumption fits all
+        # visible clues; None means it leads to a contradiction.
+        mine_possible = _find_frontier_solution(
+            constraints,
+            fixed_choices={cell: 1},
+        ) is not None
+        safe_possible = _find_frontier_solution(
+            constraints,
+            fixed_choices={cell: 0},
+        ) is not None
+
+        if not mine_possible and not safe_possible:
+            raise ValueError("The game state contains contradictory clues.")
+
+        # Compare the two answers. If both are possible, the clues do not tell
+        # us which value is real. If only safe is possible, the cell is safe,
+        # but stays hidden because this step function has no key to reveal it.
+        # Only mine-possible and safe-impossible justifies writing M here.
+        if mine_possible and not safe_possible:
+            grid[cell[0]][cell[1]] = "M"
+            result = format_board(grid)
+            _BACKTRACKING_STEP_CHECKED[result] = checked_now
+            if len(_BACKTRACKING_STEP_CHECKED) > 1000:
+                _BACKTRACKING_STEP_CHECKED.clear()
+            return cell, result
+
+    # A safe or uncertain result is not written into the board: X is the only
+    # symbol available for an unrevealed safe cell, and this function has no
+    # key to reveal its number. Save the check so the next call moves on.
+    _BACKTRACKING_STEP_CHECKED[board_text] = checked_now
+    if len(_BACKTRACKING_STEP_CHECKED) > 1000:
+        _BACKTRACKING_STEP_CHECKED.clear()
+    return cell, format_board(grid)
+
 
 def backtracking_solve(answer_key: str) -> list[tuple[tuple[int, int], str]]:  # REQUIRED
-    """Play from an all-X board with pure backtracking until the board is solved
-    or a mine is hit. Returns the list of (cell, board_after) for every step."""
-    raise NotImplementedError
+    """Play from an all-hidden board using pure backtracking.
+
+    The input is the complete answer key, but the solver must act as if it is
+    playing from scratch. It first creates an all-``X`` view, then repeats the
+    following turn until all safe cells are revealed or a guess hits a mine:
+
+    1. Build constraints using only numbers visible in the current game view.
+       A clue such as ``2`` means exactly two of its still-hidden neighbours
+       must be mines, after subtracting any already marked ``M`` cells.
+    2. Search the possible mine/safe assignments that fit those constraints.
+       Mark values that are forced in every assignment. These marks do not
+       count as clicks; they record what the visible clues prove.
+    3. Prefer a cell proven safe. If no such cell exists, choose a plausible
+       safe frontier cell that can still satisfy the clues and prefer one with
+       more hidden neighbours, since its reveal may give more information.
+       If no frontier cell can be safe, guess outside the frontier.
+    4. Reveal the chosen cell and update the visible board. A zero clue also
+       reveals its connected safe area, so one click can expose many cells.
+
+    The answer key is used by ``is_won`` to know when the game is complete and
+    by ``reveal_cell`` to simulate what a click reveals. It does not help
+    choose the next coordinate. Each returned item is
+    ``(clicked_coordinate, board_after_click)``. A final board can also contain
+    ``M`` marks for mines proved by the search.
+    """
+    key_grid = parse_board(answer_key)
+    if any(cell == "X" for row in key_grid for cell in row):
+        raise ValueError("backtracking_solve requires a complete answer key.")
+
+    rows, columns = len(key_grid), len(key_grid[0])
+    grid = [["X" for _ in range(columns)] for _ in range(rows)]
+    steps = []
+
+    # A win means every safe cell is visible. Mines may remain hidden or be
+    # marked M because they are not cells the player needs to click.
+    while not is_won(answer_key, format_board(grid)):
+        state = format_board(grid)
+        constraints = extract_constraints(state)
+        frontier = _frontier_cells(constraints)
+
+        if frontier:
+            # Analyze only the visible clues. No answer-key cells are used to
+            # decide these deductions or the next click. ``one_solution`` is
+            # just one consistent possibility; only the two forced lists are
+            # safe to treat as facts about every possible board.
+            _, forced_mines, forced_safe = _analyse_frontier(constraints)
+
+            # Mark every logically forced mine so future clue equations can
+            # subtract it. These are deductions, not clicks.
+            for mine_row, mine_column in forced_mines:
+                grid[mine_row][mine_column] = "M"
+
+            # A forced-safe cell is guaranteed not to lose the game. Prefer it
+            # over guessing because its click must reveal useful information.
+            safe_to_click = []
+            for cell in forced_safe:
+                row, column = cell
+                if grid[row][column] == "X":
+                    safe_to_click.append(cell)
+
+            if safe_to_click:
+                # A proven-safe click cannot lose. Use row-major order so the
+                # same visible board always produces a reproducible choice.
+                cell_to_click = safe_to_click[0]
+            else:
+                # No safe value is forced. Find cells that can be safe in at
+                # least one consistent world, then prefer the click that would
+                # reveal the most nearby information. This is still a guess.
+                possible_safe_guesses = []
+                for candidate in frontier:
+                    candidate_row, candidate_column = candidate
+                    if grid[candidate_row][candidate_column] != "X":
+                        continue
+                    safe_assumption_works = _find_frontier_solution(
+                        constraints,
+                        fixed_choices={candidate: 0},
+                    ) is not None
+                    if safe_assumption_works:
+                        possible_safe_guesses.append(candidate)
+
+                if possible_safe_guesses:
+                    # A cell with more hidden neighbours can expose a more
+                    # useful clue, or open a larger region if its value is 0.
+                    # The candidates are already row-major, so ties stay
+                    # reproducible by keeping the first equally scored cell.
+                    cell_to_click = possible_safe_guesses[0]
+                    best_information_score = _hidden_neighbour_count(
+                        grid, cell_to_click
+                    )
+
+                    for candidate in possible_safe_guesses[1:]:
+                        information_score = _hidden_neighbour_count(grid, candidate)
+                        if information_score > best_information_score:
+                            cell_to_click = candidate
+                            best_information_score = information_score
+                else:
+                    # Every frontier cell may be a mine. Look for a hidden
+                    # cell outside the frontier; with no clue it is a guess.
+                    unconstrained = []
+                    for row in range(rows):
+                        for column in range(columns):
+                            cell = (row, column)
+                            if grid[row][column] == "X" and cell not in frontier:
+                                unconstrained.append(cell)
+                    if not unconstrained:
+                        # All remaining cells are known mines, so they cannot
+                        # be clicked. Mark them and the next loop detects a win.
+                        for row in range(rows):
+                            for column in range(columns):
+                                if grid[row][column] == "X":
+                                    grid[row][column] = "M"
+                        continue
+                    cell_to_click = unconstrained[0]
+        else:
+            # At the start there are no clues. Choose a corner for the first
+            # click; it has fewer neighbours and often opens useful information.
+            hidden_cells = []
+            for row in range(rows):
+                for column in range(columns):
+                    if grid[row][column] == "X":
+                        hidden_cells.append((row, column))
+            if not hidden_cells:
+                break
+            cell_to_click = (0, 0) if grid[0][0] == "X" else hidden_cells[0]
+
+        # This is the boundary between reasoning and simulating the click: all
+        # choices above used only visible information. Now the engine consults
+        # the key to show what the chosen click actually reveals.
+        next_state, still_playing = reveal_cell(
+            answer_key,
+            format_board(grid),
+            cell_to_click[0],
+            cell_to_click[1],
+        )
+        steps.append((cell_to_click, next_state))
+        grid = parse_board(next_state)
+
+        # A mine click ends the game; its M is visible in the final trace board.
+        if not still_playing:
+            break
+
+    return steps
 
 
 # Task 3 -- Backtracking + constraint propagation
