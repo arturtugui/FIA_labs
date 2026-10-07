@@ -1398,9 +1398,94 @@ def mine_probability(state: str) -> str:  # REQUIRED
 
 # Task 5 -- Difficulty classification
 def classify_difficulty(state: str) -> str:  # REQUIRED
-    """Return the name of the simplest technique that resolves the state with
-    100% confidence, or the cells that make a certain decision impossible."""
-    raise NotImplementedError
+    """Report the simplest technique that can prove a move in this position.
+
+    Techniques are tried in increasing order of power: Task 2 basic
+    propagation, Task 6 advanced propagation, then backtracking. A technique
+    succeeds as soon as it proves at least one hidden frontier cell safe or a
+    mine. If none can prove a cell, the returned text identifies the uncertain
+    frontier cells and any hidden cells outside the frontier.
+
+    Coordinates in the explanation are zero-indexed ``(row, column)`` pairs.
+    """
+    grid = parse_board(state)
+    constraints = extract_constraints(state)
+    frontier_cells = _frontier_cells(constraints)
+
+    # A position with no hidden squares needs no reasoning. If it does have
+    # hidden squares but no clues touch them, there is no constrained move.
+    hidden_cells = []
+    for row in range(len(grid)):
+        for column in range(len(grid[0])):
+            if grid[row][column] == "X":
+                hidden_cells.append((row, column))
+
+    if not hidden_cells:
+        return "Solved: no hidden cells remain."
+
+    if not frontier_cells:
+        return (
+            "Guess required: no clue touches a hidden cell; "
+            f"all {len(hidden_cells)} hidden cells are unconstrained."
+        )
+
+    # Each propagation pass starts from the original visible facts. The first
+    # pass uses only Task 2's rules; the second adds Task 6's subset rule.
+    basic_assignments = _propagate_assignments(constraints, {})
+    if basic_assignments is None:
+        return "Invalid state: the visible clues contradict one another."
+    if basic_assignments:
+        return "Basic propagation can prove at least one hidden cell."
+
+    advanced_assignments = _propagate_assignments(
+        constraints,
+        {},
+        use_advanced_rules=True,
+    )
+    if advanced_assignments is None:
+        return "Invalid state: the visible clues contradict one another."
+    if advanced_assignments:
+        return "Advanced propagation can prove at least one hidden cell."
+
+    # Search tests every candidate's opposite value. A cell is certain only
+    # when that opposite assumption has no valid solution.
+    try:
+        _, forced_mines, forced_safe = _analyse_frontier(constraints)
+    except ValueError:
+        return "Invalid state: the visible clues contradict one another."
+
+    certain_cells = set(forced_mines)
+    certain_cells.update(forced_safe)
+    if certain_cells:
+        return "Backtracking can prove at least one hidden cell."
+
+    # No technique found a guaranteed move. List every ambiguous frontier cell
+    # and group the remaining hidden squares as unconstrained cells.
+    uncertain_frontier_cells = []
+    for cell in frontier_cells:
+        row, column = cell
+        if grid[row][column] == "X":
+            uncertain_frontier_cells.append(cell)
+
+    unconstrained_hidden_cells = []
+    frontier_set = set(frontier_cells)
+    for cell in hidden_cells:
+        if cell not in frontier_set:
+            unconstrained_hidden_cells.append(cell)
+
+    explanation_parts = []
+    if uncertain_frontier_cells:
+        explanation_parts.append(
+            "uncertain frontier cells: "
+            + ", ".join(str(cell) for cell in uncertain_frontier_cells)
+        )
+    if unconstrained_hidden_cells:
+        explanation_parts.append(
+            "unconstrained hidden cells: "
+            + ", ".join(str(cell) for cell in unconstrained_hidden_cells)
+        )
+
+    return "Guess required: no certain move; " + "; ".join(explanation_parts) + "."
 
 
 # Task 6 -- Advanced solver
