@@ -70,9 +70,22 @@ def parse_board(text: str) -> list[list[str]]:
         raise ValueError("Every board row must have the same number of cells.")
 
     allowed_cells = {"X", "M", ".", "1", "2", "3", "4", "5", "6", "7", "8"}
-    if any(cell not in allowed_cells for row in rows for cell in row):
+    if any(
+        cell not in allowed_cells and not _is_probability_cell(cell)
+        for row in rows
+        for cell in row
+    ):
         raise ValueError("Board contains a cell symbol outside the lab notation.")
     return rows
+
+
+def _is_probability_cell(cell: str) -> bool:
+    """Return whether a token is a displayed probability between 0 and 1."""
+    try:
+        probability = float(cell)
+    except ValueError:
+        return False
+    return "." in cell and 0.0 <= probability <= 1.0
 
 
 def format_board(grid: list[list[str]]) -> str:
@@ -924,10 +937,8 @@ def _solve_game(
         # Task 3 version also fills any values forced by the basic rules.
         if use_propagation:
             analyse_frontier = _analyse_frontier_with_propagation
-            find_frontier_solution = _find_frontier_solution_with_propagation
         else:
             analyse_frontier = _analyse_frontier
-            find_frontier_solution = _find_frontier_solution
 
         if frontier:
             # Analyze only the visible clues. No answer-key cells are used to
@@ -962,40 +973,22 @@ def _solve_game(
                     # frontier cell safe. The fixed opening click is excluded.
                     game_stats["guesses"] = game_stats.get("guesses", 0) + 1
 
-                # No safe value is forced. Find cells that can be safe in at
-                # least one consistent world, then prefer the click that would
-                # reveal the most nearby information. This is still a guess.
-                possible_safe_guesses = []
-                for candidate in frontier:
-                    candidate_row, candidate_column = candidate
-                    if grid[candidate_row][candidate_column] != "X":
-                        continue
-                    safe_assumption_works = find_frontier_solution(
-                        constraints,
-                        fixed_choices={candidate: 0},
-                        search_stats=game_stats,
-                    ) is not None
-                    if safe_assumption_works:
-                        possible_safe_guesses.append(candidate)
+                # No frontier cell is known safe. Compute the mine probability
+                # of each hidden frontier cell and click the lowest-risk one.
+                # Equal probabilities prefer more hidden neighbours, then the
+                # earliest row/column so the solver remains deterministic.
+                lowest_risk_cell = _choose_least_risky_frontier_cell(
+                    grid,
+                    frontier,
+                    search_stats=game_stats,
+                )
 
-                if possible_safe_guesses:
-                    # A cell with more hidden neighbours can expose a more
-                    # useful clue, or open a larger region if its value is 0.
-                    # The candidates are already row-major, so ties stay
-                    # reproducible by keeping the first equally scored cell.
-                    cell_to_click = possible_safe_guesses[0]
-                    best_information_score = _hidden_neighbour_count(
-                        grid, cell_to_click
-                    )
-
-                    for candidate in possible_safe_guesses[1:]:
-                        information_score = _hidden_neighbour_count(grid, candidate)
-                        if information_score > best_information_score:
-                            cell_to_click = candidate
-                            best_information_score = information_score
+                if lowest_risk_cell is not None:
+                    cell_to_click = lowest_risk_cell
                 else:
                     # Every frontier cell may be a mine. Look for a hidden
-                    # cell outside the frontier; with no clue it is a guess.
+                    # cell outside the frontier. No clue constrains its risk,
+                    # so use the same stable row-major fallback as before.
                     unconstrained = []
                     for row in range(rows):
                         for column in range(columns):
@@ -1066,10 +1059,216 @@ def backtrack_constraint(answer_key: str) -> list[tuple[tuple[int, int], str]]: 
 
 
 # Task 4 -- Mine probabilities
+def _frontier_components(
+    constraints: list[Constraint],
+) -> list[tuple[set[tuple[int, int]], list[Constraint]]]:
+    """Split the frontier into groups linked by shared clue constraints.
+
+    Cells in separate groups do not occur together in any constraint, so their
+    possible assignments can be counted independently rather than as one much
+    larger Cartesian product.
+    """
+    cells_sharing_constraints: dict[tuple[int, int], set[tuple[int, int]]] = {}
+
+    for constraint in constraints:
+        hidden_cells = set(constraint.hidden_cells)
+        for cell in hidden_cells:
+            cells_sharing_constraints.setdefault(cell, set()).update(hidden_cells)
+
+    unvisited_cells = set(cells_sharing_constraints)
+    components = []
+
+    while unvisited_cells:
+        first_cell = min(unvisited_cells)
+        component_cells = set()
+        pending_cells = [first_cell]
+
+        # Walk through every variable connected by a shared clue equation.
+        while pending_cells:
+            cell = pending_cells.pop()
+            if cell in component_cells:
+                continue
+
+            component_cells.add(cell)
+            unvisited_cells.discard(cell)
+            for linked_cell in cells_sharing_constraints[cell]:
+                if linked_cell not in component_cells:
+                    pending_cells.append(linked_cell)
+
+        component_constraints = []
+        for constraint in constraints:
+            if constraint.hidden_cells and constraint.hidden_cells[0] in component_cells:
+                component_constraints.append(constraint)
+
+        components.append((component_cells, component_constraints))
+
+    return components
+
+
+def _count_component_probabilities(
+    component_cells: set[tuple[int, int]],
+    constraints: list[Constraint],
+    search_stats: dict[str, int] | None = None,
+) -> dict[tuple[int, int], float]:
+    """Enumerate valid mine/safe worlds and count mines in one component."""
+    mine_world_counts = {cell: 0 for cell in component_cells}
+    world_count = 0
+
+    # Apply any clue that already forces cells before opening search branches.
+    starting_assignments = _propagate_assignments(constraints, {})
+    if starting_assignments is None:
+        raise ValueError("The game state contains contradictory clues.")
+
+    def count_worlds(assignments: Assignment) -> None:
+        """Branch on one undecided cell, counting each complete world once."""
+        nonlocal world_count
+
+        unassigned_cells = []
+        for cell in component_cells:
+            if cell not in assignments:
+                unassigned_cells.append(cell)
+
+        if not unassigned_cells:
+            # Every frontier cell has a value and all clues remain consistent.
+            world_count += 1
+            for cell in component_cells:
+                mine_world_counts[cell] += assignments[cell]
+            return
+
+        # A stable order makes the same state produce the same enumeration.
+        cell_to_try = min(unassigned_cells)
+
+        # The safe and mine branches cover every possible value for this cell.
+        for assumed_value in (0, 1):
+            if search_stats is not None:
+                # Probability enumeration is real search work too. Count each
+                # tried value so benchmark node totals include guess analysis.
+                search_stats["nodes"] = search_stats.get("nodes", 0) + 1
+
+            branch_assignments = assignments.copy()
+            branch_assignments[cell_to_try] = assumed_value
+
+            # Propagation fills values that follow from this choice. A None
+            # result means the branch broke a clue, so it contributes no world.
+            propagated_assignments = _propagate_assignments(
+                constraints,
+                branch_assignments,
+            )
+            if propagated_assignments is not None:
+                count_worlds(propagated_assignments)
+
+    count_worlds(starting_assignments)
+
+    if world_count == 0:
+        raise ValueError("The game state contains contradictory clues.")
+
+    # All valid assignments of this independent component are weighted equally.
+    probabilities = {}
+    for cell in component_cells:
+        probabilities[cell] = mine_world_counts[cell] / world_count
+    return probabilities
+
+
+def _frontier_probability_values(
+    state: str,
+    search_stats: dict[str, int] | None = None,
+) -> dict[tuple[int, int], float]:
+    """Calculate unrounded mine probabilities for all constrained hidden cells."""
+    constraints = extract_constraints(state)
+
+    # An already complete set of clues may still be contradictory, so check
+    # zero-cell constraints before processing components.
+    for constraint in constraints:
+        if not constraint.hidden_cells and constraint.mines_needed != 0:
+            raise ValueError("The game state contains contradictory clues.")
+
+    components = _frontier_components(constraints)
+    all_probabilities = {}
+
+    # Count each disconnected group separately. This avoids multiplying the
+    # search spaces of regions that do not share any information.
+    for component_cells, component_constraints in components:
+        component_probabilities = _count_component_probabilities(
+            component_cells,
+            component_constraints,
+            search_stats=search_stats,
+        )
+
+        all_probabilities.update(component_probabilities)
+
+    return all_probabilities
+
+
+def _probability_grid(
+    state: str,
+    search_stats: dict[str, int] | None = None,
+) -> list[list[str]]:
+    """Return a copied grid with display-formatted probabilities on its frontier."""
+    grid = parse_board(state)
+    probabilities = _frontier_probability_values(state, search_stats)
+    output_grid = [row[:] for row in grid]
+
+    # Keep calculation exact internally; only round when preparing display text.
+    for (row, column), probability in probabilities.items():
+        output_grid[row][column] = f"{probability:.2f}"
+    return output_grid
+
+
+def _choose_least_risky_frontier_cell(
+    grid: list[list[str]],
+    frontier: list[tuple[int, int]],
+    search_stats: dict[str, int] | None = None,
+) -> tuple[int, int] | None:
+    """Choose the lowest-probability hidden frontier cell, with stable tie-breaks.
+
+    Cells with equal mine probability are ordered by how many hidden neighbours
+    they can reveal (more first), then by row and column. Return None if all
+    frontier cells have already been marked as mines.
+    """
+    probabilities = _frontier_probability_values(
+        format_board(grid),
+        search_stats=search_stats,
+    )
+    possible_clicks = []
+
+    for row, column in frontier:
+        if grid[row][column] != "X":
+            continue
+
+        if (row, column) not in probabilities:
+            continue
+
+        mine_probability_value = probabilities[(row, column)]
+        information_score = _hidden_neighbour_count(grid, (row, column))
+
+        # Sort low risk first. For equally risky cells, prefer more hidden
+        # neighbours, and use row-major order to make any remaining tie repeat.
+        possible_clicks.append(
+            (
+                mine_probability_value,
+                -information_score,
+                row,
+                column,
+            )
+        )
+
+    if not possible_clicks:
+        return None
+
+    chosen_click = min(possible_clicks)
+    return chosen_click[2], chosen_click[3]
+
+
 def mine_probability(state: str) -> str:  # REQUIRED
-    """Return the same game state where every hidden cell on the constraint
-    frontier is replaced by its probability of being a mine."""
-    raise NotImplementedError
+    """Return the state with each hidden frontier cell replaced by mine risk.
+
+    Every consistent frontier assignment is an equally weighted world. A
+    cell's probability is the fraction of its component's worlds where that
+    cell is a mine. Unconstrained hidden cells remain X because the clues give
+    them no frontier probability.
+    """
+    probability_grid = _probability_grid(state)
+    return format_board(probability_grid)
 
 
 # Task 5 -- Difficulty classification
