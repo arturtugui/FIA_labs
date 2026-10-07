@@ -439,6 +439,7 @@ def _assignment_is_consistent(
 def _find_frontier_solution(
     constraints: list[Constraint],
     fixed_choices: Assignment | None = None,
+    search_stats: dict[str, int] | None = None,
 ) -> Assignment | None:
     """Find one complete assignment that satisfies all frontier clues.
 
@@ -447,11 +448,18 @@ def _find_frontier_solution(
         fixed_choices: Optional assumptions to hold constant while searching.
             For example, ``{(2, 3): 1}`` asks whether cell ``(2, 3)`` can be a
             mine in any valid solution.
+        search_stats: Optional caller-owned measurement counter. Its purpose
+            is to compare how much branching search methods do; it does not
+            change the search or its answer. Each tried value increases the
+            ``"nodes"`` count, including failed trials. Automatically deduced
+            values do not count.
 
     The function returns a dictionary assigning every frontier cell 0 (safe)
     or 1 (mine). It returns None when the assumptions make all solutions
     impossible. Cells outside the frontier are not included because no clue
-    currently constrains them.
+    currently constrains them. The optional ``search_stats`` exists only to
+    measure branching effort; the solver works the same if it is omitted.
+    Initialize it as ``{"nodes": 0}`` before calling.
     """
     cells = _frontier_cells(constraints)
     assignments = dict(fixed_choices or {})
@@ -496,6 +504,11 @@ def _find_frontier_solution(
         # Try safe first to make the search deterministic. This ordering is a
         # convenience only; it is not evidence that safe is the correct value.
         for value in (0, 1):
+            if search_stats is not None:
+                # Record the trial so tests can compare search effort. This is
+                # measurement only and does not affect the branch decision.
+                # Failed trials count because they still took search work.
+                search_stats["nodes"] = search_stats.get("nodes", 0) + 1
             assignments[cell] = value
 
             # If this partial choice has already broken a clue, do not waste
@@ -513,6 +526,158 @@ def _find_frontier_solution(
     if search(0):
         return assignments.copy()
     return None
+
+
+def _propagate_assignments(
+    constraints: list[Constraint],
+    current_assignments: Assignment,
+) -> Assignment | None:
+    """Apply the basic all-mines/all-safe rules to one search branch.
+
+    The input is copied, so deductions made here belong only to this branch.
+    ``None`` means that some clue cannot reach its required mine count. A
+    returned dictionary includes both the original choices and every value
+    forced by repeatedly applying the two basic rules.
+    """
+    assignments = current_assignments.copy()
+
+    # A deduction from one clue can change what another clue needs. Keep
+    # scanning until a full pass adds no more forced assignments.
+    made_a_deduction = True
+    while made_a_deduction:
+        made_a_deduction = False
+
+        for constraint in constraints:
+            assigned_mines = 0
+            unassigned_cells = []
+
+            # Separate this clue's neighbours into already chosen cells and
+            # cells whose value still needs to be decided.
+            for cell in constraint.hidden_cells:
+                if cell in assignments:
+                    assigned_mines += assignments[cell]
+                else:
+                    unassigned_cells.append(cell)
+
+            mines_still_needed = constraint.mines_needed - assigned_mines
+
+            # Too many assigned mines, or too few undecided cells to supply
+            # the remaining mines, means this branch can never be completed.
+            if mines_still_needed < 0:
+                return None
+            if mines_still_needed > len(unassigned_cells):
+                return None
+
+            if not unassigned_cells:
+                continue
+
+            # If no more mines are needed, every unknown neighbour is safe.
+            if mines_still_needed == 0:
+                forced_value = 0
+            # If every unknown neighbour is needed to reach the clue, all are
+            # mines. These are the same two rules used by Task 2.
+            elif mines_still_needed == len(unassigned_cells):
+                forced_value = 1
+            else:
+                # This clue alone does not force any of its remaining cells.
+                continue
+
+            for cell in unassigned_cells:
+                assignments[cell] = forced_value
+                made_a_deduction = True
+
+    return assignments
+
+
+def _find_frontier_solution_with_propagation(
+    constraints: list[Constraint],
+    fixed_choices: Assignment | None = None,
+    search_stats: dict[str, int] | None = None,
+) -> Assignment | None:
+    """Find one valid frontier assignment, propagating after every guess.
+
+    Unlike ``_find_frontier_solution``, each trial value is immediately sent
+    through ``_propagate_assignments``. Forced neighbours are filled in before
+    choosing another branch cell, and an impossible branch is abandoned at
+    once.
+
+    ``search_stats`` is an optional measurement counter supplied by the
+    caller, usually as ``{"nodes": 0}``. Its purpose is to compare the work
+    done by this search with pure backtracking; it does not affect which
+    assignments are accepted or the solver's game decisions. Each trial mine
+    or safe value adds one to ``search_stats["nodes"]``. Values filled by
+    propagation do not count because they are deductions, not branches. The
+    dictionary is changed in place so the caller can read the count afterward.
+    """
+    cells = _frontier_cells(constraints)
+    assignments = dict(fixed_choices or {})
+
+    # A fixed choice can only be checked when it belongs to a clue constraint.
+    if any(cell not in cells for cell in assignments):
+        return None
+
+    # Propagate assumptions before branching; they may already prove values or
+    # reveal that the caller's hypothesis contradicts a clue.
+    propagated_assignments = _propagate_assignments(constraints, assignments)
+    if propagated_assignments is None:
+        return None
+    assignments = propagated_assignments
+
+    # As in the pure solver, prioritize cells shared by more clues. This helps
+    # contradictions appear early and keeps the search order deterministic.
+    def constraint_count(cell: tuple[int, int]) -> int:
+        count = 0
+        for constraint in constraints:
+            if cell in constraint.hidden_cells:
+                count += 1
+        return count
+
+    ordered_cells = sorted(cells)
+    ordered_cells.sort(key=constraint_count, reverse=True)
+
+    def search(current_assignments: Assignment, next_index: int) -> Assignment | None:
+        """Return a completed assignment, or None if this branch fails."""
+        # Propagation may have filled cells that appear later in the order, so
+        # skip them instead of making a redundant mine/safe guess.
+        while (
+            next_index < len(ordered_cells)
+            and ordered_cells[next_index] in current_assignments
+        ):
+            next_index += 1
+
+        if next_index == len(ordered_cells):
+            return current_assignments.copy()
+
+        cell = ordered_cells[next_index]
+
+        # Try safe first, matching the pure solver's deterministic order.
+        for value in (0, 1):
+            if search_stats is not None:
+                # Record actual branch work for comparison. Automatically
+                # forced values below are deductions, so they are not counted.
+                search_stats["nodes"] = search_stats.get("nodes", 0) + 1
+
+            # Each branch gets its own copy. Deductions from one assumption
+            # must not leak into the alternative assumption.
+            branch_assignments = current_assignments.copy()
+            branch_assignments[cell] = value
+
+            # Immediately propagate this choice. A contradiction kills this
+            # branch; otherwise continue with all of its forced consequences.
+            propagated_branch = _propagate_assignments(
+                constraints,
+                branch_assignments,
+            )
+            if propagated_branch is None:
+                continue
+
+            solution = search(propagated_branch, next_index + 1)
+            if solution is not None:
+                return solution
+
+        return None
+
+    return search(assignments, 0)
 
 
 def _analyse_frontier(
@@ -557,6 +722,44 @@ def _analyse_frontier(
         # the same in every valid world and is therefore logically forced.
         opposite_value = 1 - value_in_solution
         opposite_solution = _find_frontier_solution(
+            constraints,
+            fixed_choices={cell: opposite_value},
+        )
+
+        if opposite_solution is None:
+            if value_in_solution == 1:
+                forced_mines.append(cell)
+            else:
+                forced_safe.append(cell)
+
+    return first_solution, sorted(forced_mines), sorted(forced_safe)
+
+
+def _analyse_frontier_with_propagation(
+    constraints: list[Constraint],
+) -> tuple[
+    Assignment,
+    list[tuple[int, int]],  # forced_mine_cells
+    list[tuple[int, int]],  # forced_safe_cells
+]:
+    """Find certain frontier values using search with forward propagation.
+
+    The method is the same as ``_analyse_frontier``: find one valid world,
+    then test whether each cell can take its opposite value. The difference is
+    that every search branch immediately propagates the basic rules, allowing
+    it to skip forced assignments and reject impossible branches earlier.
+    """
+    first_solution = _find_frontier_solution_with_propagation(constraints)
+    if first_solution is None:
+        raise ValueError("The game state contains contradictory clues.")
+
+    forced_mines = []
+    forced_safe = []
+
+    for cell, value_in_solution in first_solution.items():
+        # A cell is certain only if no valid world exists with the other value.
+        opposite_value = 1 - value_in_solution
+        opposite_solution = _find_frontier_solution_with_propagation(
             constraints,
             fixed_choices={cell: opposite_value},
         )
@@ -662,19 +865,24 @@ def backtracking_step(state: str) -> tuple[tuple[int, int], str]:  # REQUIRED
     return cell, format_board(grid)
 
 
-def backtracking_solve(answer_key: str) -> list[tuple[tuple[int, int], str]]:  # REQUIRED
-    """Play from an all-hidden board using pure backtracking.
+def _solve_game(
+    answer_key: str,
+    use_propagation: bool,
+) -> list[tuple[tuple[int, int], str]]:
+    """Run one game using either pure search or search with propagation.
 
-    The input is the complete answer key, but the solver must act as if it is
-    playing from scratch. It first creates an all-``X`` view, then repeats the
-    following turn until all safe cells are revealed or a guess hits a mine:
+    This shared game loop keeps the two strategies comparable. The input is
+    the complete answer key, but the solver acts as if it is playing from
+    scratch. It first creates an all-``X`` view, then repeats the following
+    turn until all safe cells are revealed or a guess hits a mine:
 
     1. Build constraints using only numbers visible in the current game view.
        A clue such as ``2`` means exactly two of its still-hidden neighbours
        must be mines, after subtracting any already marked ``M`` cells.
     2. Search the possible mine/safe assignments that fit those constraints.
-       Mark values that are forced in every assignment. These marks do not
-       count as clicks; they record what the visible clues prove.
+       If ``use_propagation`` is true, apply the basic rules after every trial
+       value. Mark values that are forced in every assignment. These marks do
+       not count as clicks; they record what the visible clues prove.
     3. Prefer a cell proven safe. If no such cell exists, choose a plausible
        safe frontier cell that can still satisfy the clues and prefer one with
        more hidden neighbours, since its reveal may give more information.
@@ -703,12 +911,22 @@ def backtracking_solve(answer_key: str) -> list[tuple[tuple[int, int], str]]:  #
         constraints = extract_constraints(state)
         frontier = _frontier_cells(constraints)
 
+        # Select one search implementation for this entire turn. The pure
+        # version checks only whether partial assignments can still fit. The
+        # Task 3 version also fills any values forced by the basic rules.
+        if use_propagation:
+            analyse_frontier = _analyse_frontier_with_propagation
+            find_frontier_solution = _find_frontier_solution_with_propagation
+        else:
+            analyse_frontier = _analyse_frontier
+            find_frontier_solution = _find_frontier_solution
+
         if frontier:
             # Analyze only the visible clues. No answer-key cells are used to
             # decide these deductions or the next click. ``one_solution`` is
             # just one consistent possibility; only the two forced lists are
             # safe to treat as facts about every possible board.
-            _, forced_mines, forced_safe = _analyse_frontier(constraints)
+            _, forced_mines, forced_safe = analyse_frontier(constraints)
 
             # Mark every logically forced mine so future clue equations can
             # subtract it. These are deductions, not clicks.
@@ -736,7 +954,7 @@ def backtracking_solve(answer_key: str) -> list[tuple[tuple[int, int], str]]:  #
                     candidate_row, candidate_column = candidate
                     if grid[candidate_row][candidate_column] != "X":
                         continue
-                    safe_assumption_works = _find_frontier_solution(
+                    safe_assumption_works = find_frontier_solution(
                         constraints,
                         fixed_choices={candidate: 0},
                     ) is not None
@@ -807,11 +1025,22 @@ def backtracking_solve(answer_key: str) -> list[tuple[tuple[int, int], str]]:  #
     return steps
 
 
+def backtracking_solve(answer_key: str) -> list[tuple[tuple[int, int], str]]:  # REQUIRED
+    """Play from an all-hidden board using pure backtracking only."""
+    return _solve_game(answer_key, use_propagation=False)
+
+
 # Task 3 -- Backtracking + constraint propagation
 def backtrack_constraint(answer_key: str) -> list[tuple[tuple[int, int], str]]:  # REQUIRED
-    """Same as backtracking_solve, but constraints are propagated after every
-    assignment."""
-    raise NotImplementedError
+    """Play from an all-hidden board using backtracking with propagation.
+
+    Whenever search tries a mine/safe value, the basic all-mines and all-safe
+    rules are applied to a fixpoint before search branches again. Forced cells
+    are therefore assigned without extra guesses, and contradictions stop a
+    branch as soon as they appear. The returned click trace has the same format
+    as ``backtracking_solve``.
+    """
+    return _solve_game(answer_key, use_propagation=True)
 
 
 # Task 4 -- Mine probabilities
