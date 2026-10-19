@@ -17,11 +17,11 @@ from heatmap_task_4 import create_heatmap, display_heatmap
 
 
 # Edit this state to show probabilities for another position.
-SMALL = """X X X X X
-X 2 1 1 X
-2 2 . . .
-X 2 . . .
-X 2 . . ."""
+SMALL = """X X 2 X X
+2 3 3 3 X
+. 1 M 2 X
+. 1 1 2 X
+X X . X X"""
 
 
 output_path = (
