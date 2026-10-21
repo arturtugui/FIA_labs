@@ -30,6 +30,10 @@ EXAMPLES = [
         "No clues: all cells are unconstrained",
         "X X\nX X",
     ),
+    (
+        "Task 4 heatmap example",
+        "X X 2 X X\n2 3 3 3 X\n. 1 M 2 X\n. 1 1 2 X\nX X . X X",
+    ),
 ]
 
 

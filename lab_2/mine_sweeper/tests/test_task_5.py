@@ -1,7 +1,13 @@
 """Hand-editable checks for Task 5 difficulty classification."""
 
+import argparse
+import sys
 import unittest
+from pathlib import Path
 from unittest.mock import patch
+
+# Allow this file to run directly from tests/ as well as through discovery.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from minesweeper_solver import classify_difficulty
 
@@ -37,14 +43,28 @@ EXAMPLES = [
         "1 M\n1 1",
         "Solved: no hidden cells remain.",
     ),
+    (
+        "Task 4 heatmap example",
+        "X X 2 X X\n2 3 3 3 X\n. 1 M 2 X\n. 1 1 2 X\nX X . X X",
+        "Basic propagation can prove at least one hidden cell.",
+    ),
 ]
+
+SHOW_EXAMPLES = False
 
 
 class DifficultyClassificationTests(unittest.TestCase):
     def test_examples(self):
         for description, state, expected in EXAMPLES:
             with self.subTest(example=description):
-                self.assertEqual(classify_difficulty(state), expected)
+                result = classify_difficulty(state)
+                if SHOW_EXAMPLES:
+                    print(f"\nExample: {description}")
+                    print("Game state:")
+                    print(state)
+                    print("Classification:")
+                    print(result)
+                self.assertEqual(result, expected)
 
     def test_backtracking_is_reported_after_both_propagators_get_stuck(self):
         # This state has two equally possible mine locations, so neither
@@ -66,4 +86,12 @@ class DifficultyClassificationTests(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--show",
+        action="store_true",
+        help="print the example boards and their difficulty classifications",
+    )
+    arguments, unittest_arguments = parser.parse_known_args()
+    SHOW_EXAMPLES = arguments.show
+    unittest.main(argv=[sys.argv[0], *unittest_arguments])

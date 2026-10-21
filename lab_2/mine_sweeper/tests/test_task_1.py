@@ -4,6 +4,10 @@ import argparse
 import random
 import sys
 import unittest
+from pathlib import Path
+
+# Allow this file to run directly from tests/ as well as through discovery.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from minesweeper_solver import (
     backtracking_solve,

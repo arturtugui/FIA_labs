@@ -5,7 +5,12 @@ Run from this folder with ``python test_task_3.py``.
 
 import argparse
 import itertools
+import sys
 import unittest
+from pathlib import Path
+
+# Allow this file to run directly from tests/ as well as through discovery.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from minesweeper_solver import (
     Constraint,
