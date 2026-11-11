@@ -164,4 +164,92 @@ the evidence.
 The PNGs remain in `task 1 eda/plots/`; matching `.md` files in that folder
 contain the underlying values for each figure.
 
+## Step 1.4 — Column types and distributions
+
+The table records each column's role and variable type. The letter codes are
+treated as categorical values; their biological meanings are not assumed
+because no data dictionary was supplied.
+
+| Column | Role | Variable type | Notes |
+|---|---|---|---|
+| family | Classification target | Nominal categorical | Predicted in Tasks 2–4. |
+| name | Identifier | Nominal text | Species name; not a model feature. |
+| class | Analysis label | Binary categorical | Separate label for analysis and cluster comparison. |
+| cap-diameter | Feature | Numeric interval | Range; midpoint used for the numeric distribution plot. |
+| cap-shape | Feature | Multi-valued categorical | Cell may list more than one nominal code. |
+| Cap-surface | Feature | Multi-valued categorical | May list multiple codes; some cells are blank. |
+| cap-color | Feature | Multi-valued categorical | Cell may list more than one nominal code. |
+| does-bruise-or-bleed | Feature | Binary categorical | Observed values are `[f]` and `[t]`. |
+| gill-attachment | Feature | Multi-valued categorical | May list multiple codes; some cells are blank. |
+| gill-spacing | Feature | Single-valued categorical | One nominal code per nonblank cell; no order assumed. |
+| gill-color | Feature | Multi-valued categorical | Cell may list more than one nominal code. |
+| stem-height | Feature | Numeric interval | Range; midpoint used for the numeric distribution plot. |
+| stem-width | Feature | Numeric interval | Range; midpoint used for the numeric distribution plot. |
+| stem-root | Feature | Single-valued categorical | One nominal code per nonblank cell; many cells are blank. |
+| stem-surface | Feature | Multi-valued categorical | May list multiple codes; some cells are blank. |
+| stem-color | Feature | Multi-valued categorical | Cell may list more than one nominal code. |
+| veil-type | Feature | Single-valued categorical | One observed code; most cells are blank. |
+| veil-color | Feature | Multi-valued categorical | May list multiple codes; many cells are blank. |
+| has-ring | Feature | Binary categorical | Observed values are `[t]` and `[f]`. |
+| ring-type | Feature | Multi-valued categorical | May list multiple codes; a few cells are blank. |
+| Spore-print-color | Feature | Multi-valued categorical | May list multiple codes; many cells are blank. |
+| habitat | Feature | Multi-valued categorical | Cell may list more than one nominal code. |
+| season | Feature | Multi-valued categorical | Cell may list more than one nominal code. |
+
+### Family distribution
+
+![Mushroom counts by family](<task 1 eda/plots/1.4_02_family_distribution.png>)
+
+**Figure 6.** The family sizes are imbalanced: Tricholoma has 43 mushrooms
+and Russula has 27, while six families have only one mushroom each. This
+imbalance will matter when choosing and evaluating family classifiers. The
+[family count table](<task 1 eda/plots/1.4_02_family_distribution.md>) lists all 23 counts.
+
+### Class distribution
+
+![Mushroom counts by class code](<task 1 eda/plots/1.4_03_class_distribution.png>)
+
+**Figure 7.** The recorded class counts are 96 `p` and 77 `e`. This is a
+moderate imbalance. The plot shows the codes as recorded and does not assign
+them a biological meaning.
+
+### Class composition by family
+
+![Class composition within each family](<task 1 eda/plots/1.4_04_class_by_family.png>)
+
+**Figure 8.** The class mix differs across families. For example, Tricholoma
+has 23 `e` and 20 `p` mushrooms, while Russula has 11 `e` and 16 `p`; some
+families contain only one recorded class. The single-mushroom families cannot
+support a reliable conclusion about their class proportions. See the [family-by-class table](<task 1 eda/plots/1.4_04_class_by_family.md>) for all counts.
+
+### Numeric ranges by class
+
+![Numeric range midpoints by class](<task 1 eda/plots/1.4_05_numeric_by_class.png>)
+
+This figure uses **boxplots** to compare the distributions of three numeric
+measurements between the recorded class codes. Each panel is one measurement;
+the x-axis shows the class code and the y-axis shows the range midpoint in the
+source units. Each small gray dot represents one mushroom. Dots are shifted
+slightly sideways only to make overlapping observations easier to see.
+
+In each box, the horizontal line marks the **median**. The box covers the
+middle half of the observations, from the 25th percentile to the 75th
+percentile. The **whiskers** extend to the most extreme observations within
+1.5 times the box height (the interquartile range); dots beyond them are
+flagged by the boxplot rule as potential outliers. That flag does not mean the
+measurement is wrong or should be removed.
+
+We use these plots to compare typical measurement values and their spread
+between the two class groups, while also seeing each mushroom's value. Each
+bracketed range was represented by its midpoint; a single-value entry was
+treated as a zero-width range. The median cap diameter is 6.5 for `e` and 5.0
+for `p`; median stem height is 6.0 and 5.5; median stem width is 12.5 and 7.5,
+respectively. The distributions overlap, so these measurements alone do not
+clearly separate the class codes. The plots also show large values (up to 50
+for cap diameter, 25 for stem height, and 70 for stem width); these need review
+as possible outliers, not automatic removal. The [numeric summary table](<task 1 eda/plots/1.4_05_numeric_by_class.md>) gives descriptive statistics by class.
+
+The type table and plot data tables are generated by
+`task 1 eda/1.4_column_types_distributions.py`.
+
 
