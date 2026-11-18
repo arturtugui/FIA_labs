@@ -364,7 +364,9 @@ For `veil-type`, `[u]` is the only observed value and occurs in nine rows;
 filling all 164 blanks with it would make the column constant. The other
 sparse columns also have modes based on few observed rows, so mode imputation
 would repeat those values many times. The three numeric range columns have no
-blanks, so median imputation is not needed. Missing values remain unchanged.
+blanks, so median imputation is not needed. Missing values remain unchanged at
+this step; the final handling is decided in Step 1.11 (the sparse columns are
+dropped) and Task 2.2 (the remaining blanks are filled with training modes).
 
 ## Step 1.9 — Feature value frequencies for tier design
 
@@ -437,10 +439,24 @@ individual Legendary scores are in
 [`1.10_rarity_scoring.md`](<task 1 eda/plots/1.10_rarity_scoring.md>) and
 [`1.10_rarity_scores.csv`](processed_data/1.10_rarity_scores.csv).
 
-### Task 1 status
+## Step 1.11 — Fixed-rule preprocessing
 
-The work documented so far covers the catalogue structure, column roles and
-types, duplicates, missingness, distributions, numeric range checks, and
-feature-association summaries, and a first rarity-tier assignment using the
-documented rule. The tiers are provisional until their sensitivity to missing-
-value handling and the feature choices is reviewed.
+The `1.11_preprocessing.py` script applies the preprocessing rules that do not
+learn anything from the data, so they can be applied to all 173 rows before
+the train/test split. It writes
+[`processed_data/1.11_clean.csv`](processed_data/1.11_clean.csv) (173 rows ×
+19 columns); the full log is in
+[`1.11_preprocessing.md`](<task 1 eda/plots/1.11_preprocessing.md>).
+
+| # | Issue found | Where it was found | Decision | Why |
+|---|---|---|---|---|
+| 1 | Mixed column-name case (`Cap-surface`, `Spore-print-color`) | Step 1.2 | Lowercase all column names | One naming convention avoids lookup mistakes. |
+| 2 | The same set of codes is written in different orders or spacings, e.g. `[x, f]` / `[f, x]`, `[n, w]` / `[w, n]` / `[n ,w]` | Checked here | Rewrite every categorical cell as a sorted, de-duplicated set (375 cells rewritten) | A cell lists codes that all apply, so order carries no meaning. Without this, one shape would count as several different values (cap-color: 67 → 58 distinct values, cap-shape: 27 → 25). |
+| 3 | Numeric features are stored as `[min, max]` ranges | Step 1.5 | Replace each range by its midpoint; a single value is a zero-width range | Min and max are strongly correlated (Spearman 0.83–0.96, Step 1.5), so one number per measurement keeps the typical size. |
+| 4 | `veil-type` (94.8%), `spore-print-color` (89.6%), `veil-color` (87.9%) and `stem-root` (84.4%) are mostly blank | Step 1.2 | Drop the columns more than 80% blank | Filling 84–95% of a column would mostly invent values (Step 1.8). Cost: `veil-type = [u]` almost identifies Amanita (8 of its 9 rows, Step 1.3), so that signal is knowingly given up. |
+| 5 | Blanks remain in `cap-surface` (23.1%), `gill-attachment` (16.2%), `gill-spacing` (41.0%), `stem-surface` (62.4%) and `ring-type` (4.0%) | Step 1.2 | Kept blank here; filled with modes in Task 2.2 | A mode is learned from the data, so it must be learned from the training rows only. |
+| 6 | Large values (e.g. Dryad's Saddle cap 50, Cep stem width 70) and zeros for stem-less fungi | Steps 1.4–1.5 | Kept here; large values capped at the training 99th percentile in Task 2.2; zeros kept | A cap is learned from the data (training rows only). The zeros are real (no stem), not errors. |
+| 7 | `has-ring = [t]` with `ring-type = [f]` (7 rows), `veil-color` without `veil-type` (12 rows) | Step 1.3 | Left as recorded (the veil columns are dropped anyway) | Changing them would mean guessing values. |
+
+The rarity tiers from Step 1.10 were computed on the raw catalogue and are not
+recomputed from this cleaned file.
