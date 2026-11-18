@@ -1,0 +1,174 @@
+﻿name,family,class,cluster_k5,cluster_k10,cluster_k15,cluster_k23
+Fly Agaric,Amanita Family,p,,C5,C1,C2
+Panther Cap,Amanita Family,p,,C5,C1,C2
+False Panther Cap,Amanita Family,p,,C5,C1,C6
+False Death Cap,Amanita Family,e,,C5,C1,C6
+Destroying Angel,Amanita Family,p,,C5,C1,C2
+Tawny Grisette,Amanita Family,e,,C8,C6,C2
+Parasol Mushroom,Lepiota Family,e,,,C1,C7
+Shaggy Parasol,Lepiota Family,e,,,C1,C1
+Saffron Parasol,Tricholoma Family,p,C2,C10,C8,C17
+The Deceiver,Tricholoma Family,e,C5,C1,C9,C7
+Clouded Agaric,Tricholoma Family,e,C3,C8,C13,C14
+Common Funnel Cap,Tricholoma Family,e,C1,C9,C14,C7
+Ivory Clitocybe,Tricholoma Family,p,C1,C9,C13,C15
+Wood Woolly-foot,Tricholoma Family,p,C2,C1,C9,C8
+Russet Tough Shank,Tricholoma Family,p,C3,C1,C6,C19
+Clustered Tough Shank,Tricholoma Family,p,C3,C1,C9,C9
+Greasy Tough Shank,Tricholoma Family,e,C3,C1,C6,C14
+Spotted Tough Shank,Tricholoma Family,p,C3,C9,C14,C6
+Horse-hair Fungus,Tricholoma Family,p,C5,C8,C3,C18
+Bonnet Bell Cap,Tricholoma Family,e,C5,C6,C10,C18
+Stump Bell Cap,Tricholoma Family,p,C5,C4,C10,C4
+Milky Bell Cap,Tricholoma Family,e,C5,C9,C4,C4
+Small Bleeding Bell Cap,Tricholoma Family,e,C3,C1,C4,C9
+Lilac Bell Cap,Tricholoma Family,p,C5,C9,C14,C4
+Yellow-stemmed Bell Cap,Tricholoma Family,e,C2,C8,C4,C8
+Orange Moss Agaric,Tricholoma Family,p,C2,C9,C15,C3
+Umbrella Navel Cap,Tricholoma Family,p,C2,C8,C4,C8
+Rooting Shank,Tricholoma Family,p,C4,C1,C6,C2
+Porcelain Mushroom,Tricholoma Family,e,C5,C8,C7,C18
+Velvet Shank,Tricholoma Family,e,C4,C8,C6,C14
+Grey Tricholoma,Tricholoma Family,e,C5,C8,C10,C4
+Scaly Tricholoma,Tricholoma Family,e,C3,C9,C14,C6
+Yellow-brown Tricholoma,Tricholoma Family,e,C4,C2,C11,C20
+Sulphur Tricholoma,Tricholoma Family,p,C2,C3,C12,C10
+St George's Mushroom,Tricholoma Family,e,C3,C8,C13,C6
+Clustered Brown Cap,Tricholoma Family,e,C5,C9,C14,C4
+Plums and custard,Tricholoma Family,p,C2,C3,C12,C10
+Ivory Wax Cap,Wax Gill Family,e,,C8,C13,C11
+Yellow Wax cap,Wax Gill Family,p,,C3,C5,C3
+Orange-red Wax Cap,Wax Gill Family,p,,C9,C15,C3
+Blackening Wax Cap,Wax Gill Family,p,,C4,C3,C3
+Meadow Wax Cap,Wax Gill Family,e,,C8,C13,C11
+Scarlet Hood,Wax Gill Family,e,,C2,C3,C3
+Common Yellow Russula,Russula Family,e,C3,C9,C14,C16
+Yellow-gilled Russula,Russula Family,e,C2,C9,C14,C16
+Geranium-scented Russula,Russula Family,p,C2,C3,C5,C12
+Fragile Russula,Russula Family,p,C3,C9,C14,C4
+Bare-toothed Russula,Russula Family,e,C3,C9,C14,C6
+Blackening Russula,Russula Family,e,C3,C8,C13,C11
+The Sickener,Russula Family,p,C3,C8,C13,C2
+Beechwood Sickener,Russula Family,p,C3,C9,C14,C6
+Grass-green Russula,Russula Family,p,C3,C9,C14,C16
+Fleecy Milk Cap,Russula Family,p,C1,C8,C13,C11
+Oak Milk Cap,Russula Family,p,C1,C7,C2,C19
+Slimy Milk Cap,Russula Family,p,C1,C7,C2,C19
+Ugly Milk Cap,Russula Family,p,C1,C7,C2,C19
+Rufous Milk Cap,Russula Family,p,C1,C7,C2,C19
+Sweet Milk Cap,Russula Family,p,C1,C7,C2,C19
+Small Brown Milk Cap,Russula Family,p,C1,C7,C2,C19
+Woolly Milk Cap,Russula Family,p,C1,C7,C2,C15
+Saffron Milk Cap,Russula Family,e,C1,C7,C2,C15
+Spruce Milk Cap,Russula Family,p,C1,C7,C15,C16
+Veined Pluteus,Pluteus Family,e,,,,C9
+Silky Nolanea,Entoloma Family,p,,C1,C9,C15
+Striated Nolanea,Entoloma Family,p,,C1,C9,C22
+Livid Entoloma,Entoloma Family,p,,C3,C5,C9
+The Miller,Entoloma Family,e,,C9,C13,C15
+Apricot Fungus,Entoloma Family,p,,C1,C9,C14
+Brown Bell Cap,Bolbitius Family,p,,,C3,C21
+Spring Agaric,Bolbitius Family,e,,,C7,C1
+Brown Stew Fungus,Stropharia Family,e,,C2,C6,C1
+Sulphur Tuft,Stropharia Family,p,,C3,C8,C17
+Brick Caps,Stropharia Family,p,,C10,C8,C17
+Verdigris Toadstool,Stropharia Family,p,,C4,C7,C1
+Dung Roundhead,Stropharia Family,p,,C4,C7,C21
+Magic Mushroom,Stropharia Family,p,,C4,C3,C21
+Red-banded Cortinarius,Cortinarius Family,p,C2,C2,C3,C8
+Purple Cortinarius,Cortinarius Family,p,C5,C1,C10,C14
+Red-staining Inocybe,Cortinarius Family,p,C2,C3,C5,C16
+Straw-coloured Inocybe,Cortinarius Family,p,C2,C9,C14,C16
+Common White Inocybe,Cortinarius Family,p,C3,C9,C14,C4
+Poison Pie,Cortinarius Family,p,C4,C2,C6,C9
+Spectacular Gymnopile,Cortinarius Family,p,C2,C3,C15,C16
+Moss Pixy Cap,Cortinarius Family,p,C5,C4,C3,C18
+Cultivated Mushroom,Mushroom Family,e,,,C1,C13
+Yellow-staining Mushroom,Mushroom Family,p,,,C7,C1
+Bleeding Brown Mushroom,Mushroom Family,e,,,C1,C9
+Shaggy Ink Cap,Ink Cap Family,e,C3,C5,C1,C13
+Common Ink Cap,Ink Cap Family,p,C5,C6,C7,C18
+Magpie Ink Cap,Ink Cap Family,p,C5,C9,C14,C18
+Rusty Carpet Ink Cap,Ink Cap Family,p,C5,C9,C14,C4
+Glistening Ink Cap,Ink Cap Family,e,C5,C6,C3,C18
+Common Crumble Cap,Ink Cap Family,e,C3,C9,C14,C6
+Two-toned Crumble Cap,Ink Cap Family,e,C3,C8,C3,C18
+Egg-shell Toadstool,Ink Cap Family,p,C5,C4,C7,C18
+Weeping Widow,Ink Cap Family,p,C2,C10,C8,C17
+Cep,Bolete Family,e,C4,C2,C5,C20
+Bay Bolete,Bolete Family,e,C4,C2,C5,C20
+Yellow-cracked Bolete,Bolete Family,e,C2,C3,C5,C5
+Lurid Bolete,Bolete Family,p,C2,C3,C5,C5
+Parasitic Bolete,Bolete Family,e,C2,C2,C11,C5
+Bitter Bolete,Bolete Family,p,C4,C1,C9,C9
+Orange Birch Bolete,Bolete Family,e,C4,C2,C11,C9
+Larch Bolete,Bolete Family,e,C2,C3,C5,C20
+Slippery Jack,Bolete Family,e,C4,C2,C5,C20
+Shallow-pored Bolete,Bolete Family,e,C4,C2,C5,C8
+Brown Roll-rim,Paxillus Family,p,,,C2,C19
+Velvet Roll-rim,Paxillus Family,p,,,C2,C19
+Tubed Chanterelle,Chanterelle Family,e,,,C12,C12
+Horn of Plenty,Chanterelle Family,e,,,C12,C7
+Oyster Mushroom,Oyster Mushroom Family,e,,,,C14
+Olive-brown Panellus,Tricholoma Family,p,C2,C3,C15,C7
+Soft Slipper Toadstool,Crepidotus Family,p,,,,C7
+Hedgehog Fungus,Hydnum Family,e,,,,C16
+Ear-pick Fungus,Ear-Pick Family,p,,,,C18
+Silver Leaf Fungus,Bracket Fungi,p,,C6,C12,C23
+Dryad's Saddle,Bracket Fungi,e,,C3,C5,C7
+Fuzzy Polypore,Bracket Fungi,p,,C2,C11,C14
+Brown Goblet,Bracket Fungi,p,,C2,C2,C7
+White Saddle,Saddle-Cup Family,p,,,,C7
+Elfin's Saddle,Bracket Fungi,p,,C1,C10,C7
+Common Morel,Morel Family,e,,,,C7
+Jelly Babies,Jelly Discs Family,p,,,,C12
+The Blusher,Amanita Family,e,,C5,C1,C6
+Death Cap,Amanita Family,p,,C5,C1,C2
+Stinking Parasol,Lepiota Family,p,,,C1,C6
+Amethyst Deceiver,Tricholoma Family,e,C3,C8,C14,C4
+Wood Blewit,Tricholoma Family,e,C5,C1,C12,C14
+Field Blewit,Tricholoma Family,e,C5,C1,C9,C14
+Club-footed Funnel Cap,Tricholoma Family,p,C3,C1,C6,C14
+Aniseed Funnel Cap,Tricholoma Family,e,C3,C9,C14,C16
+Fairy Ring Champignon,Tricholoma Family,e,C5,C8,C4,C4
+Little Wheel Fungus,Tricholoma Family,p,C3,C8,C4,C8
+Tufted Bell Cap,Tricholoma Family,p,C3,C8,C4,C9
+Orange Bell Cap,Tricholoma Family,p,C2,C3,C15,C16
+Honey Fungus,Tricholoma Family,e,C3,C10,C8,C17
+Bulbous Honey Fungus,Tricholoma Family,e,C3,C5,C8,C14
+Soap-scented Tricholoma,Tricholoma Family,p,C3,C8,C6,C9
+Changeable Melanoleuca,Tricholoma Family,e,C3,C1,C6,C22
+Parrot Wax Cap,Wax Gill Family,p,,C3,C15,C22
+Herald of Winter,Wax Gill Family,e,,C8,C6,C14
+Yellow Swamp Russula,Russula Family,e,C2,C3,C5,C16
+Stinking Russula,Russula Family,p,C3,C8,C13,C2
+Birch Russula,Russula Family,p,C3,C9,C14,C6
+The Charcoal Burner,Russula Family,e,C3,C9,C14,C16
+Blackish Purple Russula,Russula Family,e,C3,C9,C13,C6
+Crab-scented Russula,Russula Family,e,C3,C1,C2,C12
+Peppery Milk Cap,Russula Family,e,C1,C7,C13,C15
+Coconut-scented Milk Cap,Russula Family,e,C1,C7,C2,C19
+Fawn Pluteus,Pluteus Family,e,,,,C9
+White Leptonia,Entoloma Family,p,,C8,C13,C15
+Blue Leptonia,Entoloma Family,p,,C9,C13,C15
+Egg Yolk Fungus,Bolbitius Family,p,,,C3,C21
+Shaggy Pholiota,Stropharia Family,p,,C10,C8,C17
+Charcoal Pholiota,Stropharia Family,p,,C2,C8,C17
+Blood-red Cortinarius,Cortinarius Family,p,C2,C9,C3,C16
+Dark-centred Hebeloma,Cortinarius Family,p,C3,C8,C7,C1
+Rusty Wood Rotter,Cortinarius Family,p,C2,C10,C8,C17
+Field Mushroom,Mushroom Family,e,,,C1,C13
+Horse Mushroom,Mushroom Family,e,,,C1,C13
+Fairies' Bonnets,Ink Cap Family,e,C5,C6,C10,C18
+Fairy Parasol,Ink Cap Family,e,C5,C6,C3,C18
+Hay Cap,Ink Cap Family,p,C5,C4,C3,C18
+Petticoat Fungus,Ink Cap Family,p,C5,C4,C3,C18
+Red-cracked Bolete,Bolete Family,e,C2,C3,C5,C5
+Dotted-stemmed Bolete,Bolete Family,p,C2,C3,C5,C5
+Peppery Bolete,Bolete Family,e,C4,C2,C11,C20
+Brown Birch Bolete,Bolete Family,e,C5,C9,C14,C9
+False Chanterelle,Paxillus Family,p,,,C15,C3
+Chanterelle,Chanterelle Family,e,,,C12,C12
+Branched Oyster Mushroom,Oyster Mushroom Family,e,,,,C7
+Hairy Stereum,Bracket Fungi,p,,C6,C12,C23
+Turban Fungus,Bracket Fungi,p,,C1,C12,C7

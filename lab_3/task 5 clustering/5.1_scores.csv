@@ -1,0 +1,5 @@
+Families included,Families = k,Mushrooms,Purity,Family togetherness,Families that are the largest in some cluster
+more than 10 mushrooms,5,108,0.528,0.516,3 of 5
+more than 6 mushrooms,10,146,0.493,0.413,6 of 10
+more than 2 mushrooms,15,163,0.497,0.563,7 of 15
+all families,23,173,0.549,0.654,12 of 23

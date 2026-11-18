@@ -1247,3 +1247,194 @@ of one fixed 70/30 split (more reliable scores from the same data), merging the
 families with fewer than 5 mushrooms into one "Other" class, feature selection
 to remove columns that only add noise, and distance-weighted voting in KNN to
 avoid alphabetical tie-breaks.
+
+# Task 5 — Clustering with K-Means
+
+**Held-out column: `family`.** K-Means is run without the family label, and
+the clusters are compared with the families afterwards, to see whether the
+mushrooms' features alone group them into their families. `class` and `name`
+are also left out of the input. K-Means only sees the 94 encoded feature
+columns from Task 2.4 (91 dummy 0/1 columns and 3 scaled size columns), the
+same columns KNN used. No train/test split is needed: K-Means uses no labels,
+so there is nothing to test on unseen mushrooms.
+
+The script is `task 5 clustering/5.1_kmeans_by_family_size.py`. K-Means works
+as follows:
+
+1. Place k cluster centres.
+2. Assign every mushroom to its nearest centre (Euclidean distance, as in KNN).
+3. Move every centre to the average of the mushrooms assigned to it.
+4. Repeat steps 2–3 until no mushroom changes cluster.
+
+The result depends on the starting centres, so it is run 10 times from
+different starts and the best run is kept (fixed random seed 42).
+
+## 5.1 Number of clusters = number of families
+
+Many families have only one or a few mushrooms (see the family table in Step
+1.4), and a cluster cannot meaningfully represent a family of one. So K-Means
+was run four times, each time only on the mushrooms of families above a size
+threshold, with **k equal to the number of those families**. If the features
+grouped mushrooms by family, each cluster would then contain a single family.
+
+| Run | Families included | Families = k | Mushrooms clustered |
+|---|---|---:|---:|
+| 1 | more than 10 mushrooms (Tricholoma, Russula, Bolete, Ink Cap, Cortinarius) | 5 | 108 |
+| 2 | more than 6 mushrooms (+ Amanita, Wax Gill, Stropharia, Entoloma, Bracket Fungi) | 10 | 146 |
+| 3 | more than 2 mushrooms (+ Mushroom, Lepiota, Bolbitius, Paxillus, Chanterelle) | 15 | 163 |
+| 4 | all families | 23 | 173 |
+
+Two simple scores measure how well the clusters match the families:
+
+- **Purity**: the share of mushrooms that belong to the largest family of
+  their cluster. 1.0 means every cluster contains a single family. For
+  comparison, putting all mushrooms into one cluster would give a purity
+  equal to the share of the largest family (Tricholoma).
+- **Family togetherness**: for each family, the share of its mushrooms that
+  are in the same cluster (its most common one), averaged over the families.
+  1.0 means no family is split over several clusters.
+
+## 5.2 Results
+
+| Families included | k | Mushrooms | Purity | Purity if all in one cluster | Family togetherness | Families that are the largest family of some cluster |
+|---|---:|---:|---:|---:|---:|---|
+| more than 10 mushrooms | 5 | 108 | 0.528 | 0.398 | 0.516 | 3 of 5 |
+| more than 6 mushrooms | 10 | 146 | 0.493 | 0.295 | 0.413 | 6 of 10 |
+| more than 2 mushrooms | 15 | 163 | 0.497 | 0.264 | 0.563 | 7 of 15 |
+| all families | 23 | 173 | 0.549 | 0.249 | 0.654 | 12 of 23 |
+
+In each figure below, the left map shows the K-Means clusters and the right
+map shows the real families of the same mushrooms. Each cluster is labelled
+with its largest family and how many of its mushrooms belong to it (e.g.
+"Russula 12/14" = 12 of the cluster's 14 mushrooms are Russula). The maps are
+a 2D PCA projection of the 94 columns, which keeps only 13.8% of the
+variation, so clusters that overlap on the map can still be separated in the
+full 94 columns. Each family keeps the same colour and marker shape in every
+figure. Under each figure, a table gives the number of mushrooms of each
+family in each cluster; **bold** marks the largest family of each cluster
+(both are bold when two families tie), and the last row is the cluster size.
+
+**k = 5, families with more than 10 mushrooms:**
+
+![K-Means k = 5](<task 5 clustering/5.1_k5_map.png>)
+
+| Family (mushrooms) | C1 | C2 | C3 | C4 | C5 |
+| --- | --- | --- | --- | --- | --- |
+| Tricholoma (43) | 2 | **9** | **17** | 3 | **12** |
+| Russula (27) | **12** | 3 | 12 | 0 | 0 |
+| Bolete (14) | 0 | 6 | 0 | **7** | 1 |
+| Ink Cap (13) | 0 | 1 | 3 | 0 | 9 |
+| Cortinarius (11) | 0 | 6 | 2 | 1 | 2 |
+| **Cluster size** | 14 | 25 | 34 | 11 | 24 |
+
+Even with only the five largest families, no cluster is one family.
+Tricholoma is spread over all five clusters, Russula is split in two halves
+(12 and 12), and Ink Cap and Cortinarius are never the largest family of any
+cluster. The closest match is cluster C1 (12 of its 14 mushrooms are
+Russula).
+
+**k = 10, families with more than 6 mushrooms:**
+
+![K-Means k = 10](<task 5 clustering/5.1_k10_map.png>)
+
+| Family (mushrooms) | C1 | C2 | C3 | C4 | C5 | C6 | C7 | C8 | C9 | C10 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Tricholoma (43) | **11** | 1 | 4 | 1 | 1 | 1 | 0 | **13** | **9** | **2** |
+| Russula (27) | 1 | 0 | 2 | 0 | 0 | 0 | **11** | 4 | **9** | 0 |
+| Bolete (14) | 1 | **7** | **5** | 0 | 0 | 0 | 0 | 0 | 1 | 0 |
+| Ink Cap (13) | 0 | 0 | 0 | **3** | 1 | **4** | 0 | 1 | 3 | 1 |
+| Cortinarius (11) | 1 | 2 | 2 | 1 | 0 | 0 | 0 | 1 | 3 | 1 |
+| Amanita (8) | 0 | 0 | 0 | 0 | **7** | 0 | 0 | 1 | 0 | 0 |
+| Stropharia (8) | 0 | 2 | 1 | **3** | 0 | 0 | 0 | 0 | 0 | **2** |
+| Wax Gill (8) | 0 | 1 | 2 | 1 | 0 | 0 | 0 | 3 | 1 | 0 |
+| Bracket Fungi (7) | 2 | 2 | 1 | 0 | 0 | 2 | 0 | 0 | 0 | 0 |
+| Entoloma (7) | 3 | 0 | 1 | 0 | 0 | 0 | 0 | 1 | 2 | 0 |
+| **Cluster size** | 19 | 15 | 18 | 9 | 9 | 7 | 11 | 24 | 28 | 6 |
+
+Adding five medium families gives one new clear group: 7 of the 8 Amanita
+mushrooms end up in the same cluster. The large families stay split.
+
+**k = 15, families with more than 2 mushrooms:**
+
+![K-Means k = 15](<task 5 clustering/5.1_k15_map.png>)
+
+| Family (mushrooms) | C1 | C2 | C3 | C4 | C5 | C6 | C7 | C8 | C9 | C10 | C11 | C12 | C13 | C14 | C15 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Tricholoma (43) | 0 | 0 | 1 | **7** | 0 | **7** | 1 | 3 | **4** | **3** | 1 | **3** | 3 | 7 | **3** |
+| Russula (27) | 0 | **10** | 0 | 0 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | **6** | **8** | 1 |
+| Bolete (14) | 0 | 0 | 0 | 0 | **9** | 0 | 0 | 0 | 1 | 0 | **3** | 0 | 0 | 1 | 0 |
+| Ink Cap (13) | 1 | 0 | **5** | 0 | 0 | 0 | **2** | 1 | 0 | 1 | 0 | 0 | 0 | 3 | 0 |
+| Cortinarius (11) | 0 | 0 | 3 | 0 | 1 | 1 | 1 | 1 | 0 | 1 | 0 | 0 | 0 | 2 | 1 |
+| Amanita (8) | **7** | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Stropharia (8) | 0 | 0 | 1 | 0 | 0 | 1 | **2** | **4** | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Wax Gill (8) | 0 | 0 | 2 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 2 |
+| Bracket Fungi (7) | 0 | 1 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 1 | 1 | **3** | 0 | 0 | 0 |
+| Entoloma (7) | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 3 | 0 | 0 | 0 | 3 | 0 | 0 |
+| Mushroom (5) | 4 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Bolbitius (3) | 0 | 0 | 2 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Chanterelle (3) | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | **3** | 0 | 0 | 0 |
+| Lepiota (3) | 3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Paxillus (3) | 0 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 |
+| **Cluster size** | 15 | 13 | 14 | 7 | 15 | 11 | 8 | 9 | 8 | 6 | 5 | 9 | 14 | 21 | 8 |
+
+One cluster now collects the ringed families: 7 Amanita, 4 of the 5 Mushroom
+Family and all 3 Lepiota. All 3 Chanterelle mushrooms also share a cluster,
+and 9 of the 14 Bolete mushrooms are together.
+
+**k = 23, all families:**
+
+![K-Means k = 23](<task 5 clustering/5.1_k23_map.png>)
+
+| Family (mushrooms) | C1 | C2 | C3 | C4 | C5 | C6 | C7 | C8 | C9 | C10 | C11 | C12 | C13 | C14 | C15 | C16 | C17 | C18 | C19 | C20 | C21 | C22 | C23 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Tricholoma (43) | 0 | 1 | 1 | **7** | 0 | 3 | 3 | **4** | **4** | **2** | 0 | 0 | 0 | **7** | 1 | 2 | 2 | 3 | 1 | 1 | 0 | **1** | 0 |
+| Russula (27) | 0 | 2 | 0 | 1 | 0 | **4** | 0 | 0 | 0 | 0 | **2** | **2** | 0 | 0 | 3 | **6** | 0 | 0 | **7** | 0 | 0 | 0 | 0 |
+| Bolete (14) | 0 | 0 | 0 | 0 | **5** | 0 | 0 | 1 | 3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | **5** | 0 | 0 | 0 |
+| Ink Cap (13) | 0 | 0 | 0 | 1 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 1 | **9** | 0 | 0 | 0 | 0 | 0 |
+| Cortinarius (11) | 1 | 0 | 0 | 1 | 0 | 0 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 1 | 0 | 4 | 1 | 1 | 0 | 0 | 0 | 0 | 0 |
+| Amanita (8) | 0 | **5** | 0 | 0 | 0 | 3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Stropharia (8) | **2** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | **4** | 0 | 0 | 0 | **2** | 0 | 0 |
+| Wax Gill (8) | 0 | 0 | **4** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | **2** | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | **1** | 0 |
+| Bracket Fungi (7) | 0 | 0 | 0 | 0 | 0 | 0 | **4** | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | **2** |
+| Entoloma (7) | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 1 | **4** | 0 | 0 | 0 | 0 | 0 | 0 | **1** | 0 |
+| Mushroom (5) | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | **3** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Bolbitius (3) | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | **2** | 0 | 0 |
+| Chanterelle (3) | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | **2** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Lepiota (3) | 1 | 0 | 0 | 0 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Paxillus (3) | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 0 | 0 | 0 |
+| Oyster Mushroom (2) | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Pluteus (2) | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Crepidotus (1) | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Ear-Pick (1) | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 |
+| Hydnum (1) | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Jelly Discs (1) | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Morel (1) | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Saddle-Cup (1) | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **Cluster size** | 6 | 8 | 6 | 10 | 5 | 12 | 13 | 6 | 12 | 2 | 4 | 5 | 4 | 12 | 8 | 13 | 8 | 14 | 10 | 6 | 4 | 3 | 2 |
+
+With 23 clusters, some clusters are small groups of very similar mushrooms
+(e.g. 9 of the 13 Ink Cap mushrooms in one cluster), but Tricholoma is spread
+over 16 clusters and Russula over 8. The full family-by-cluster tables of all
+four runs are in
+[`5.1_kmeans_by_family_size_summary.md`](<task 5 clustering/5.1_kmeans_by_family_size_summary.md>).
+
+## 5.3 What the clusters show
+
+- **Clusters match families only partly.** Purity stays around 0.5 in every
+  run: about half of the mushrooms are in a cluster dominated by another
+  family. This is clearly better than putting everything in one cluster
+  (0.40 down to 0.25), so the features do carry some family information, but
+  K-Means does not recover the families.
+- **Removing the small families does not help.** With only the five largest
+  families (run 1), purity is 0.53, about the same as with all 23 families.
+  The problem is not the small families: the large families themselves are
+  split, because their mushrooms look different from each other (for example
+  in colour), and K-Means groups mushrooms by how they look.
+- **Families with a distinctive look are found.** Amanita (7 of 8 together
+  for k = 10 and 15), and at k = 15 the other ringed families (Mushroom,
+  Lepiota) join the same cluster. These families share a ring, which few
+  other mushrooms have.
+- **Family togetherness rises for k = 15 and 23 for a simple reason.** The
+  small families added in these runs have 1–3 mushrooms, which can hardly be
+  split (a family of one mushroom is always "together"), so they raise the
+  average. The large families are not more together than in run 1.
