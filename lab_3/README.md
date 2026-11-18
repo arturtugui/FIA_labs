@@ -366,14 +366,81 @@ sparse columns also have modes based on few observed rows, so mode imputation
 would repeat those values many times. The three numeric range columns have no
 blanks, so median imputation is not needed. Missing values remain unchanged.
 
-### Task 1 status before tier definition
+## Step 1.9 — Feature value frequencies for tier design
+
+The `1.9_feature_value_frequencies.py` script calculates each value's
+frequency as `count / total observed rows for that feature`. For a multi-valued
+categorical cell, each token is counted separately, at most once per row. Its
+denominator is the nonblank rows in that column; thus, percentages for one
+column can sum above 100% when rows list multiple tokens. For numeric ranges,
+the script uses the previously derived midpoint and width, and counts each
+exact value among 173 rows. It excludes `name`, `family`, and `class` so the
+table covers only prediction features. For example, a token appearing in 17 of
+145 nonblank `gill-attachment` rows has a frequency of 11.72%. A lower
+frequency means that observed value is less common within its feature; this
+table is input for tier design, not the tier definition itself.
+
+The full table is available as
+[`1.9_feature_value_frequencies.md`](<task 1 eda/plots/1.9_feature_value_frequencies.md>)
+and [`1.9_feature_value_frequencies.csv`](processed_data/1.9_feature_value_frequencies.csv).
+
+## Step 1.10 — Rarity score and provisional tiers
+
+The `1.10_rarity_tier_scoring.py` script applies the agreed point bands to
+feature values, sums the observed feature contributions, and adjusts the sum
+to a common 19-feature scale to reduce the effect of different amounts of
+missing data. The value-point rule is:
+
+| Value frequency within its feature | Points |
+|---|---:|
+| Occurs once in the dataset (or falls alone in a numeric bin) | 10 |
+| Otherwise, less than 1% | 8 |
+| Otherwise, less than 5% | 5 |
+| Otherwise, less than 30% | 1 |
+| 30% or more | 0 |
+
+For a cell listing multiple categorical tokens, their points are averaged, so
+listing more tokens does not automatically increase a species' score. Exact
+numeric midpoint and width values produced many singletons, so each is first
+placed in one of ten equal-width bins; the midpoint and width points are then
+averaged into one contribution per original numeric measurement. `name`,
+`family`, and `class` are excluded. `veil-type` is excluded from this
+provisional score in line with the planned removal of the only feature above
+90% missing; the source data has not been changed. Missing values are not
+imputed for scoring; missing feature contributions are omitted and the sum is
+scaled by the number of observed scored features.
+
+The species are ranked by this score with a target split of approximately 70%
+Common, 25% Rare, and 5% Legendary. Equal scores stay together at the cutoffs.
+This produced **122 Common (70.5%), 42 Rare (24.3%), and 9 Legendary (5.2%)**.
+The closeness to the target is good; the one-species shift between Common and
+Rare comes from keeping tied scores together.
+
+| Tier | Adjusted score range | Median score |
+|---|---:|---:|
+| Common | 3.353–13.656 | 8.583 |
+| Rare | 13.722–24.775 | 16.678 |
+| Legendary | 25.446–36.643 | 27.708 |
+
+The nine Legendary species are Parasol Mushroom, Horn of Plenty, Cep, Silver
+Leaf Fungus, Shaggy Ink Cap, Fuzzy Polypore, Dryad's Saddle, Purple
+Cortinarius, and Wood Blewit. They span seven families and include six `e`
+and three `p` class labels, so this result is not simply assigning a whole
+family or class to one tier.
+
+As a completeness check, the adjusted score has a Spearman correlation of
+−0.200 with the number of missing feature cells: species with more missing
+values tend to score somewhat lower, even after normalization. This remaining
+relationship should be checked before treating the tiers as final. The
+complete per-species scores, family/class tables, numeric bin counts, and
+individual Legendary scores are in
+[`1.10_rarity_scoring.md`](<task 1 eda/plots/1.10_rarity_scoring.md>) and
+[`1.10_rarity_scores.csv`](processed_data/1.10_rarity_scores.csv).
+
+### Task 1 status
 
 The work documented so far covers the catalogue structure, column roles and
 types, duplicates, missingness, distributions, numeric range checks, and
-feature-association summaries. No Common/Rare/
-Legendary rule has been chosen or applied yet. The next Task 1 decision is to
-define and justify the rarity score and tier boundaries, then inspect how the
-resulting tiers relate to family, class and data completeness as required by
-the roadmap.
-
-
+feature-association summaries, and a first rarity-tier assignment using the
+documented rule. The tiers are provisional until their sensitivity to missing-
+value handling and the feature choices is reviewed.
