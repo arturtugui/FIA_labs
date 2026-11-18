@@ -790,3 +790,95 @@ neighbours a larger vote) could change those 24 predictions.
 The full k table, per-family test scores and individual predictions are in
 [`2.5_knn_summary.md`](<task 2 classification/knn/2.5_knn_summary.md>) and
 [`2.5_test_predictions.csv`](<task 2 classification/knn/2.5_test_predictions.csv>).
+
+# Task 3 — Ensemble classifiers
+
+An ensemble combines many decision trees into one model. Two ensembles were
+trained, one of each kind:
+
+- **Random forest** (a *bagging* method): many independent trees, each trained
+  on a random sample of the mushrooms; they vote.
+- **Gradient boosting** (a *boosting* method): trees are built one after
+  another, each one correcting the mistakes of the trees before it.
+
+Both use exactly the same protocol as KNN (Task 2.5), so all models can be
+compared fairly: the same 94 encoded columns from Task 2.4, settings chosen by
+leave-one-out macro F1 on the 123 training mushrooms only, and the 50 test
+mushrooms used once at the end. Both use scikit-learn with a fixed random seed
+(42), so every run gives the same result. Shared code (loading, leave-one-out
+tuning, tables, importance plot) is in `task 3 ensembles/ensemble_common.py`.
+
+## Task 3.1 — Random forest
+
+The script `task 3 ensembles/random forest/3.1_random_forest.py` builds a forest
+of **300 decision trees**:
+
+1. Each tree is trained on a *bootstrap sample*: 123 mushrooms drawn at random
+   **with replacement** from the 123 training mushrooms. Some mushrooms are
+   drawn two or three times, and on average about 37% are not drawn at all.
+2. At every question (split), a tree may only choose among a **random subset of
+   the 94 columns**. This makes the trees different from each other, so their
+   mistakes partly cancel out when they vote. Without this step the method
+   would be plain bagging of trees, and most trees would ask the same strong
+   questions.
+3. To classify a mushroom, every tree gives its probability for each family,
+   the forest averages them and predicts the family with the highest average.
+
+### Choosing the settings
+
+Four versions were tried, each scored on the training mushrooms by
+leave-one-out (each training mushroom is hidden, the forest is trained on the
+other 122 and then guesses the hidden one):
+
+| Columns each question may choose from | Mistakes on small families cost more? | Correct (out of 123) | Accuracy | Macro F1 |
+|---|---|---:|---:|---:|
+| about 9 (√94) | No | 60 | 48.8% | 0.158 |
+| about 9 (√94) | Yes | 59 | 48.0% | 0.187 |
+| about 28 (30% of 94) | No | 59 | 48.0% | 0.165 |
+| **about 28 (30% of 94)** | **Yes** | **61** | **49.6%** | **0.225** |
+
+In scikit-learn these settings are called `max_features` (`"sqrt"` or `0.3`)
+and `class_weight` (`None` or `"balanced_subsample"`). The number of trees is
+fixed at 300: more trees only make the vote more stable, never worse.
+
+Accuracy hardly changes (48–50%), but macro F1 rises clearly when mistakes on
+small families cost more (0.158 → 0.187 and 0.165 → 0.225). That setting makes
+the trees try harder on the small families instead of mostly learning
+Tricholoma and Russula. The last version has the best macro F1 and was chosen.
+
+### Results
+
+| Data | Mushrooms | Correctly classified | Accuracy |
+|---|---:|---:|---:|
+| Training, each mushroom predicted from the other 122 (leave-one-out) | 123 | 61 | **49.6%** |
+| Training, forest asked about the mushrooms it was trained on | 123 | 123 | 100.0% |
+| Test (never seen) | 50 | 33 | **66.0%** |
+
+Test macro F1: **0.494**.
+
+The 100% row is not real skill: the forest has seen those exact mushrooms. As
+with KNN, leave-one-out is lower than test partly because the six
+single-mushroom families can never be guessed in leave-one-out, and partly
+because a 50-mushroom test set is small (one mushroom = 2 percentage points).
+
+**Out-of-bag check.** Each tree never saw about 37% of the training mushrooms,
+so each mushroom can be guessed using only the trees that did not see it. This
+gives a second training-only estimate for free: **49.6% accuracy, macro F1
+0.225**, the same as leave-one-out.
+
+### Which columns the forest used most
+
+![Random forest feature importance](<task 3 ensembles/random forest/3.1_feature_importance.png>)
+
+Importance measures how much a column helped the trees separate the families,
+averaged over all 300 trees (all importances add up to 1). Summed over the
+dummy columns of each original feature, the top features are
+`gill-attachment` (0.143), `gill-color` (0.103), `cap-color` (0.097) and
+`cap-shape` (0.094). The three size columns are the top single columns, but
+this measure is known to favour numeric columns, because they offer many
+possible split points while a 0/1 column offers only one. `gill-attachment`
+also had the strongest association with family in Step 1.7.
+
+Full tables are in
+[`3.1_random_forest_summary.md`](<task 3 ensembles/random forest/3.1_random_forest_summary.md>)
+and [`3.1_test_predictions.csv`](<task 3 ensembles/random forest/3.1_test_predictions.csv>).

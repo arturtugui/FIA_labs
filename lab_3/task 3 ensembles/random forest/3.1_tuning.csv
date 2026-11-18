@@ -1,0 +1,5 @@
+max_features,class_weight,Accuracy,Macro F1,Correct
+sqrt,None,0.488,0.158,60
+sqrt,balanced_subsample,0.48,0.187,59
+0.3,None,0.48,0.165,59
+0.3,balanced_subsample,0.496,0.225,61
