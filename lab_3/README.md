@@ -1002,3 +1002,218 @@ All models were evaluated on the same 50 test mushrooms:
   percentage points, so a gap of 1–2 mushrooms (e.g. KNN vs gradient boosting)
   is within chance. The gap between the random forest and the rest (6 or more
   mushrooms) is larger. Task 4 will compare all models with more metrics.
+
+# Task 4 — Performance of all models
+
+The script `task 4 evaluation/4.1_model_comparison.py` compares every model from
+Tasks 2 and 3 on the **same 50 test mushrooms**. It reads each model's saved
+test predictions, so no model is retrained and every model is judged on
+exactly the same mushrooms. "Always Tricholoma" (always predicting the most
+common training family) is included as the reference every model must beat.
+All tables are also in
+[`4.1_model_comparison_summary.md`](<task 4 evaluation/4.1_model_comparison_summary.md>).
+
+## 4.1 Which metrics, and why
+
+The data is very unbalanced: the 50 test mushrooms include 13 Tricholoma and
+8 Russula, while 6 families have a single test mushroom. A good metric must
+therefore show whether a model recognises the small families too, not only the
+big ones. Five metrics were used, each answering a different question:
+
+| Metric | What it measures | Why it is used here | Always Tricholoma scores |
+|---|---|---|---:|
+| **Accuracy** | Share of mushrooms classified correctly | Easy to understand, but the big families dominate it. Kept as a reference only. | 0.26 |
+| **Balanced accuracy** | Average recall per family: for each family, the share of its mushrooms that were found, then averaged | Every family counts equally, so ignoring the small families is punished | 0.06 |
+| **Macro F1** | Average F1 per family (precision and recall combined; see Task 2.3) | Like balanced accuracy, every family counts equally, but it also punishes *wrong* guesses of a family (low precision). Used to choose the settings of every model. | 0.02 |
+| **Weighted F1** | F1 per family, averaged with each family weighted by its number of test mushrooms | Comparing it with macro F1 shows how much a model relies on the big families: a large gap means the small families are mostly missed | 0.11 |
+| **MCC** (Matthews correlation coefficient) | One number from the whole table of real versus predicted families: −1 = always wrong, 0 = no better than chance, 1 = perfect | Corrects for chance: guessing only the biggest family gets exactly 0, however unbalanced the data is | 0.00 |
+
+Always predicting Tricholoma looks acceptable by accuracy (26%) but scores close
+to zero on every other metric. This is why accuracy alone would be misleading
+here. ROC-AUC was not used: it needs a probability for every family, and with
+1–2 test mushrooms for most families its per-family values would be
+meaningless.
+
+## 4.2 Results
+
+| Model | Correct | Accuracy | Balanced accuracy | Macro F1 | Weighted F1 | MCC |
+|---|---:|---:|---:|---:|---:|---:|
+| Always Tricholoma | 13/50 | 0.260 | 0.059 | 0.024 | 0.107 | 0.000 |
+| Disorder tree (2.3) | 15/50 | 0.300 | 0.242 | 0.190 | 0.256 | 0.179 |
+| KNN, k = 3 (2.5) | 27/50 | 0.540 | 0.476 | 0.396 | 0.502 | 0.509 |
+| **Random forest (3.1)** | **33/50** | **0.660** | **0.525** | **0.494** | **0.590** | **0.613** |
+| Gradient boosting (3.2) | 26/50 | 0.520 | 0.310 | 0.277 | 0.477 | 0.446 |
+
+![All metrics for all models](<task 4 evaluation/4.1_metrics.png>)
+
+- **The random forest is best on all five metrics.**
+- **The ranking depends on the metric for KNN and gradient boosting.** Their
+  accuracy is almost the same (54% vs 52%) and gradient boosting's weighted F1
+  is close to KNN's (0.48 vs 0.50), but its balanced accuracy (0.31 vs 0.48)
+  and macro F1 (0.28 vs 0.40) are much lower. Gradient boosting does well on
+  the big families and misses the small ones; KNN spreads its correct answers
+  over more families. Accuracy alone would have hidden this.
+- **Weighted F1 versus macro F1** shows the same thing for every model: the gap
+  is 0.20 for gradient boosting, 0.11 for KNN and 0.10 for the random forest.
+
+### Training versus unseen mushrooms (overfitting)
+
+From the results tables of Tasks 2.3–3.2:
+
+| Model | Training mushrooms it was trained on | Training, leave-one-out (unseen) | Test (unseen) |
+|---|---:|---:|---:|
+| Disorder tree | 100.0% | – | 30.0% |
+| KNN, k = 3 | 65.0% | 44.7% | 54.0% |
+| Random forest | 100.0% | 49.6% | 66.0% |
+| Gradient boosting | 99.2% | 47.2% | 52.0% |
+
+All tree-based models reach (almost) 100% on mushrooms they were trained on
+and about 30–66% on unseen ones. The random forest overfits as much as the
+others on its own training mushrooms, but averaging 300 different trees still
+gives the best result on unseen mushrooms.
+
+## 4.3 How certain are these differences?
+
+With 50 test mushrooms, one mushroom changes accuracy by 2 percentage points,
+so some differences could be luck. To measure this, the 50 test mushrooms were
+resampled with replacement 2000 times (*bootstrap*): each resample is a new
+"test set" of 50 drawn from the real one, and every model is scored on it. The
+middle 95% of those scores gives a range for each result.
+
+![Accuracy and macro F1 with 95% ranges](<task 4 evaluation/4.1_uncertainty.png>)
+
+| Model | Accuracy (95% range) | Macro F1 (95% range) |
+|---|---|---|
+| Disorder tree | 0.30 (0.18 to 0.44) | 0.19 (0.10 to 0.29) |
+| KNN, k = 3 | 0.54 (0.40 to 0.68) | 0.40 (0.30 to 0.56) |
+| Random forest | 0.66 (0.52 to 0.78) | 0.49 (0.35 to 0.65) |
+| Gradient boosting | 0.52 (0.38 to 0.66) | 0.28 (0.20 to 0.42) |
+
+The ranges are wide (about ±0.13) and overlap. A fairer test of "is the random
+forest better than model X?" compares both models on the *same* resampled
+mushrooms and looks at the difference:
+
+| Random forest minus … | Accuracy difference (95% range) | Macro F1 difference (95% range) | Clearly better? |
+|---|---|---|---|
+| Always Tricholoma | +0.40 (+0.24 to +0.56) | +0.47 (+0.32 to +0.62) | Yes |
+| Disorder tree | +0.36 (+0.18 to +0.52) | +0.30 (+0.15 to +0.46) | Yes |
+| Gradient boosting | +0.14 (0.00 to +0.28) | +0.20 (+0.07 to +0.33) | Yes for macro F1; borderline for accuracy |
+| KNN, k = 3 | +0.12 (−0.04 to +0.28) | +0.08 (−0.07 to +0.22) | **No**: the range includes 0 |
+
+So the random forest is clearly better than the tree, the baseline and (for
+macro F1) gradient boosting. Against KNN it is better on this test set, but
+the difference is not large enough to rule out luck with only 50 test
+mushrooms.
+
+## 4.4 Which families are recognised?
+
+Test mushrooms found per family (found / test mushrooms of that family):
+
+| Family | In dataset | Always Tricholoma | Disorder tree | KNN | Random forest | Gradient boosting |
+|---|---:|---:|---:|---:|---:|---:|
+| Tricholoma | 43 | 13/13 | 8/13 | 5/13 | **12/13** | 9/13 |
+| Russula | 27 | 0/8 | 0/8 | 5/8 | **6/8** | **6/8** |
+| Bolete | 14 | 0/4 | 0/4 | **4/4** | **4/4** | **4/4** |
+| Ink Cap | 13 | 0/4 | 2/4 | **3/4** | 1/4 | 2/4 |
+| Cortinarius | 11 | 0/3 | 0/3 | **1/3** | 0/3 | **1/3** |
+| Amanita | 8 | 0/2 | 1/2 | **2/2** | 1/2 | 0/2 |
+| Stropharia | 8 | 0/2 | 0/2 | 0/2 | **2/2** | **2/2** |
+| Wax Gill | 8 | 0/2 | 0/2 | 0/2 | 0/2 | 0/2 |
+| Bracket Fungi | 7 | 0/2 | **2/2** | **2/2** | **2/2** | 0/2 |
+| Entoloma | 7 | 0/2 | 1/2 | **2/2** | **2/2** | 1/2 |
+| Mushroom | 5 | 0/2 | 0/2 | **2/2** | 1/2 | 1/2 |
+| Bolbitius | 3 | 0/1 | 0/1 | 0/1 | 0/1 | 0/1 |
+| Chanterelle | 3 | 0/1 | 0/1 | **1/1** | **1/1** | 0/1 |
+| Lepiota | 3 | 0/1 | 0/1 | 0/1 | 0/1 | 0/1 |
+| Paxillus | 3 | 0/1 | 0/1 | 0/1 | 0/1 | 0/1 |
+| Oyster Mushroom | 2 | 0/1 | 0/1 | 0/1 | 0/1 | 0/1 |
+| Pluteus | 2 | 0/1 | **1/1** | 0/1 | **1/1** | 0/1 |
+
+Grouped by family size (number of mushrooms in the whole dataset):
+
+| Family size | Families | Test mushrooms | Disorder tree | KNN | Random forest | Gradient boosting |
+|---|---:|---:|---:|---:|---:|---:|
+| Large (13–43) | 4 | 29 | 10 (34%) | 17 (59%) | **23 (79%)** | 21 (72%) |
+| Medium (5–11) | 7 | 15 | 4 (27%) | **9 (60%)** | 8 (53%) | 5 (33%) |
+| Small (2–3) | 6 | 6 | 1 (17%) | 1 (17%) | **2 (33%)** | 0 (0%) |
+
+- **The random forest wins mainly on the large families** (79%), especially
+  Tricholoma (12 of 13).
+- **KNN is the best model for the medium-sized families** (60% versus 53% for
+  the forest). Because it compares a mushroom with its closest neighbours, it
+  can recognise a family from just a few similar training mushrooms.
+- **Gradient boosting** is almost as good as the forest on large families
+  (72%) but weak on medium and small ones, which explains its low macro F1.
+- **Five families are never recognised by any model**: Wax Gill, Bolbitius,
+  Lepiota, Paxillus and Oyster Mushroom. Apart from Wax Gill, each has only
+  1–2 training mushrooms, which is too few to learn from.
+
+**Confusion matrix of the random forest** (rows = real family, columns =
+predicted family; outlined cells are the correct predictions):
+
+![Random forest confusion matrix](<task 4 evaluation/4.1_confusion_matrix_best_model.png>)
+
+10 of the forest's 17 mistakes are predictions of **Tricholoma**: Ink Cap (3),
+Russula (2), Wax Gill (2), Amanita, Bolbitius and Cortinarius (1 each). When
+the forest is unsure, it falls back to the biggest family, which has the most
+training examples and therefore wins many tree votes. Two small families
+(Oyster Mushroom, Paxillus) are predicted as Russula, the second-biggest family.
+
+## 4.5 Errors by rarity tier
+
+The story asks whether valuable (Legendary) mushrooms are classified as well
+as common ones. Using the tiers from Step 1.10:
+
+| Tier | Test mushrooms | Disorder tree | KNN | Random forest | Gradient boosting |
+|---|---:|---:|---:|---:|---:|
+| Common | 40 | 10 | 20 | **27** | 22 |
+| Rare | 9 | 4 | **6** | 5 | 4 |
+| Legendary | 1 | 1 | 1 | 1 | 0 |
+
+Only one Legendary mushroom ended up in the test set, so nothing can be
+concluded about Legendary mushrooms from this split. On the 9 Rare mushrooms,
+KNN (6) does slightly better than the forest (5), consistent with KNN being
+better on less typical mushrooms, but 9 mushrooms is too few for a firm
+conclusion. The models predict the family, not the tier, so a mistake here
+means "wrong family", not "Legendary sold as Common".
+
+## 4.6 Conclusions
+
+**Per model**
+
+- **Always Tricholoma (baseline):** 26% accuracy but 0 MCC and a macro F1 of
+  0.02. It shows why accuracy alone is not enough on this data.
+- **Disorder tree:** only slightly better than the baseline on accuracy (30%),
+  though clearly better on the family-balanced metrics. It classifies every
+  training mushroom correctly but cannot handle test mushrooms whose exact cell
+  values it never saw (35 of 50 test mushrooms hit such an answer).
+- **KNN (k = 3):** a large step up (54%, macro F1 0.40) from a very simple
+  method, and the best model for medium-sized families and Rare mushrooms. Its
+  weakness is tied votes: almost half of its test predictions were three
+  different families, decided alphabetically.
+- **Random forest:** the best model on every metric (66%, macro F1 0.49, MCC
+  0.61), and the most reliable on the large families. Averaging 300 different
+  trees removes much of the single tree's memorising. Its typical mistake is
+  falling back to Tricholoma when unsure.
+- **Gradient boosting:** good accuracy and weighted F1, but low balanced
+  accuracy and macro F1: it learns the big families and overfits the small
+  ones (99.2% on its training mushrooms).
+
+**Overall**
+
+1. **Ensembles were not automatically better.** The random forest beat every
+   other model, but gradient boosting did worse than the much simpler KNN on
+   the family-balanced metrics. With 123 training mushrooms, averaging
+   (random forest) worked better than step-by-step correction (boosting).
+2. **The data limits the results more than the choice of model.** Six families
+   have a single mushroom and cannot be tested at all; five more are never
+   recognised by any model. More mushrooms per family would help more than a
+   different algorithm.
+3. **The test set is small.** The 95% ranges are about ±0.13, so the random
+   forest's lead over KNN (6 mushrooms) is suggestive but not certain.
+
+**Improvements not tried here:** repeated stratified cross-validation instead
+of one fixed 70/30 split (more reliable scores from the same data), merging the
+families with fewer than 5 mushrooms into one "Other" class, feature selection
+to remove columns that only add noise, and distance-weighted voting in KNN to
+avoid alphabetical tie-breaks.
