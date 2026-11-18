@@ -882,3 +882,94 @@ also had the strongest association with family in Step 1.7.
 Full tables are in
 [`3.1_random_forest_summary.md`](<task 3 ensembles/random forest/3.1_random_forest_summary.md>)
 and [`3.1_test_predictions.csv`](<task 3 ensembles/random forest/3.1_test_predictions.csv>).
+
+## Task 3.2 — Gradient boosting
+
+The script `task 3 ensembles/gradient boosting/3.2_gradient_boosting.py` uses
+scikit-learn's `GradientBoostingClassifier`:
+
+1. Start from a simple guess: each family's share of the training mushrooms.
+2. Build a small tree that predicts how wrong the current probabilities are
+   for each training mushroom. With 23 families, each round builds one small
+   tree per family (23 trees per round).
+3. Add the trees' corrections, scaled down by the **learning rate** (0.1, so
+   each round fixes only a tenth of the error), and repeat for the chosen
+   number of rounds.
+4. Predict the family with the highest probability after the last round.
+
+Unlike the random forest, the trees are not independent: each one is built to
+fix what the previous ones still get wrong. Each round also uses a random 80%
+of the training mushrooms (`subsample = 0.8`), which adds some randomness and
+makes overfitting slower.
+
+### Choosing the settings
+
+| Rounds | Questions per small tree (depth) | Correct (out of 123) | Accuracy | Macro F1 |
+|---:|---:|---:|---:|---:|
+| 100 | 2 | 58 | 47.2% | 0.213 |
+| **100** | **3** | **58** | **47.2%** | **0.214** |
+| 200 | 2 | 59 | 48.0% | 0.212 |
+| 200 | 3 | 57 | 46.3% | 0.191 |
+
+In scikit-learn these settings are `n_estimators` and `max_depth`; the
+learning rate is fixed at 0.1. The trees are kept shallow (2–3 questions)
+because boosting overfits quickly on small data. 100 rounds with depth 3 has
+the highest macro F1 and was chosen, but the first three versions differ by
+only 0.002, which is far less than a single mushroom changes; in practice they
+are equally good. Only the largest version (200 rounds, depth 3) is clearly
+worse, which is a sign of overfitting.
+
+### Results
+
+| Data | Mushrooms | Correctly classified | Accuracy |
+|---|---:|---:|---:|
+| Training, each mushroom predicted from the other 122 (leave-one-out) | 123 | 58 | **47.2%** |
+| Training, model asked about the mushrooms it was trained on | 123 | 122 | 99.2% |
+| Test (never seen) | 50 | 26 | **52.0%** |
+
+Test macro F1: **0.277**.
+
+### Which columns gradient boosting used most
+
+![Gradient boosting feature importance](<task 3 ensembles/gradient boosting/3.2_feature_importance.png>)
+
+Summed per original feature, the top features are `ring-type` (0.210),
+`gill-color` (0.114), `cap-shape` (0.106) and `gill-attachment` (0.097).
+`gill-color`, `cap-shape` and `gill-attachment` are near the top for both
+ensembles. `ring-type` is ranked much higher than in the random forest
+(0.064): boosting concentrates on the few columns that fix the remaining
+mistakes, while the random forest's random column subsets spread the
+importance over more columns.
+
+Full tables are in
+[`3.2_gradient_boosting_summary.md`](<task 3 ensembles/gradient boosting/3.2_gradient_boosting_summary.md>)
+and [`3.2_test_predictions.csv`](<task 3 ensembles/gradient boosting/3.2_test_predictions.csv>).
+
+## Task 3 — Comparison with the Task 2 models
+
+All models were evaluated on the same 50 test mushrooms:
+
+| Model | Test accuracy | Test macro F1 |
+|---|---:|---:|
+| Always predict Tricholoma | 26.0% (13/50) | 0.024 |
+| Disorder tree (Task 2.3) | 30.0% (15/50) | 0.190 |
+| KNN, k = 3 (Task 2.5) | 54.0% (27/50) | 0.396 |
+| **Random forest (Task 3.1)** | **66.0% (33/50)** | **0.494** |
+| Gradient boosting (Task 3.2) | 52.0% (26/50) | 0.277 |
+
+- **The random forest is the best model so far** on both measures: 6 more
+  correct test mushrooms than KNN and 18 more than the disorder tree.
+- **Gradient boosting did not beat KNN.** Its accuracy is close (52% vs 54%),
+  but its macro F1 is much lower (0.277 vs 0.396): it gets the big families
+  right but misses more of the small ones.
+- **Why the forest did better than boosting here.** Both start from trees that
+  can memorise the training data (100% and 99.2% on the training mushrooms).
+  The forest averages 300 independent trees, so the memorised details of
+  individual mushrooms mostly cancel out. Boosting builds every tree to fix the
+  remaining mistakes, and with 23 families and only 1–3 training mushrooms for
+  many of them, the remaining mistakes are often single unusual mushrooms, so
+  it learns details that do not repeat in the test set.
+- **These differences need care.** With 50 test mushrooms, one mushroom is 2
+  percentage points, so a gap of 1–2 mushrooms (e.g. KNN vs gradient boosting)
+  is within chance. The gap between the random forest and the rest (6 or more
+  mushrooms) is larger. Task 4 will compare all models with more metrics.
