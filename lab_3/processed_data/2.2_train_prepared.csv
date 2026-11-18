@@ -1,0 +1,124 @@
+﻿family;name;class;cap-shape;cap-surface;cap-color;does-bruise-or-bleed;gill-attachment;gill-spacing;gill-color;stem-surface;stem-color;has-ring;ring-type;habitat;season;cap-diameter-midpoint;stem-height-midpoint;stem-width-midpoint
+Amanita Family;Fly Agaric;p;[f, x];[g, h];[e, o];[f];[e];[c];[w];[y];[w];[t];[g, p];[d];[a, u, w];15.0;17.5;17.5
+Amanita Family;Panther Cap;p;[p, x];[g];[n];[f];[e];[c];[w];[y];[w];[t];[p];[d];[a, u];7.5;8.0;15.0
+Amanita Family;False Panther Cap;p;[f, x];[y];[g, n];[f];[e];[c];[w];[s];[w];[t];[e, g];[d];[a, u];12.5;11.0;15.0
+Amanita Family;False Death Cap;e;[x];[y];[w, y];[f];[e];[c];[w];[s];[w, y];[t];[g];[d];[a, u];6.5;6.0;12.5
+Amanita Family;Destroying Angel;p;[b];[t];[w];[f];[e];[c];[w];[y];[w];[t];[e, l];[d];[a, u];7.5;12.5;12.5
+Amanita Family;Tawny Grisette;e;[c, x];[h, t];[n];[f];[e];[c];[w];[s];[n, w];[f];[f];[d];[a, u];6.0;12.5;12.5
+Lepiota Family;Parasol Mushroom;e;[f, p];[y];[n, w];[f];[a];[c];[w];[s];[n];[t];[m];[d, m];[a, u];17.5;18.67;20.0
+Lepiota Family;Shaggy Parasol;e;[x];[e, y];[n];[t];[e];[c];[w];[s];[w];[t];[z];[d, g];[a, u];15.0;10.0;17.5
+Tricholoma Family;Saffron Parasol;p;[x];[y];[n, y];[f];[a];[c];[w];[y];[n, y];[t];[r];[d, g, h];[a, u];3.5;5.5;3.5
+Tricholoma Family;The Deceiver;e;[f, s];[y];[n];[f];[a, d];[d];[p];[i];[n];[f];[f];[h, l];[a, u];2.5;6.5;3.5
+Tricholoma Family;Clouded Agaric;e;[f, s, x];[e];[g, n];[f];[a, d];[c];[w];[s];[w];[f];[f];[d, l];[a, w];14.0;8.5;25.0
+Tricholoma Family;Common Funnel Cap;e;[s];[y];[n];[f];[d];[c];[w];[s];[w];[f];[f];[d, h, l];[a, u];6.0;5.0;8.0
+Tricholoma Family;Ivory Clitocybe;p;[f, s, x];[s];[g, w];[f];[d];[c];[w];[s];[w];[f];[f];[g];[a, u];3.0;3.0;7.5
+Tricholoma Family;Wood Woolly-foot;p;[f];[l];[e, n, y];[f];[x];[d];[e, n, y];[s];[n, y];[f];[f];[d, l];[a, u];4.5;6.0;5.0
+Tricholoma Family;Russet Tough Shank;p;[f];[d];[b, n];[f];[x];[c];[w, y];[i, s];[n];[f];[f];[d, l];[a, u];3.5;4.5;3.0
+Tricholoma Family;Clustered Tough Shank;p;[f, x];[y];[n, w];[f];[x];[c];[p];[s];[n, p];[f];[f];[d, l];[a, u];3.5;8.0;4.0
+Tricholoma Family;Greasy Tough Shank;e;[f, x];[s];[b, n];[f];[x];[c];[w];[s];[n];[f];[f];[l];[a, w];6.0;7.0;10.0
+Tricholoma Family;Spotted Tough Shank;p;[f, x];[y];[n, w];[f];[x];[c];[w];[i];[w];[f];[f];[d, h];[a, u];9.0;10.0;11.5
+Tricholoma Family;Horse-hair Fungus;p;[x];[g];[e, n, p];[f];[a];[c];[n, p];[h, s];[k];[f];[f];[d];[a, s, u, w];0.75;4.0;1.0
+Tricholoma Family;Bonnet Bell Cap;e;[b, f];[g];[g, n];[f];[a];[d];[g];[s];[g, n];[f];[f];[d];[a, s, u, w];4.0;5.5;3.5
+Tricholoma Family;Stump Bell Cap;p;[b];[y];[g, n];[f];[a];[c];[g];[s];[g, n];[f];[f];[d];[a, u];2.0;5.0;2.0
+Tricholoma Family;Milky Bell Cap;e;[c];[g];[n];[f];[a];[c];[g, w];[s];[g];[f];[f];[d, l];[a, u];1.5;5.0;1.5
+Tricholoma Family;Small Bleeding Bell Cap;e;[c, f, x];[g];[e, n];[t];[a];[c];[p, w];[s];[n];[f];[f];[d, h];[a, u];1.0;5.5;1.0
+Tricholoma Family;Lilac Bell Cap;p;[b, f, s];[w];[u];[f];[a];[c];[g, u];[s];[u];[f];[f];[d, l];[a, u];3.5;5.5;5.5
+Tricholoma Family;Yellow-stemmed Bell Cap;e;[x];[g, s, t];[n, y];[f];[a, d];[c];[w];[t];[y];[f];[f];[d, g, h];[a, u];1.5;6.0;2.0
+Tricholoma Family;Orange Moss Agaric;p;[f, x];[y];[o];[f];[d];[c];[o];[s];[o, y];[f];[f];[g];[a, u];0.7;4.5;1.0
+Tricholoma Family;Umbrella Navel Cap;p;[x];[g];[n, y];[f];[d];[d];[n];[s];[n];[f];[f];[d, h];[a, u];1.5;2.0;2.5
+Tricholoma Family;Rooting Shank;p;[f, x];[h, t, w];[e, n];[f];[x];[c];[w];[g];[n];[f];[f];[d];[a, u];7.0;14.0;7.5
+Tricholoma Family;Porcelain Mushroom;e;[x];[h, t];[g, n];[f];[a];[d];[n];[t];[g, w];[t];[l];[d];[a, u, w];6.0;6.0;5.0
+Tricholoma Family;Velvet Shank;e;[f, x];[h, t];[n, o];[f];[a];[d];[w, y];[k, s];[n, o];[f];[f];[d];[a, s, w];4.5;6.5;5.5
+Tricholoma Family;Grey Tricholoma;e;[b, f];[h];[g, k];[f];[s];[d];[g, w];[s];[g];[f];[f];[d];[a, u];6.0;5.0;10.0
+Tricholoma Family;Scaly Tricholoma;e;[f, x];[y];[g, n];[f];[s];[c];[g, w, y];[s];[w];[f];[f];[d];[a, u];5.0;4.5;7.5
+Tricholoma Family;Yellow-brown Tricholoma;e;[f];[g, h, s, t];[n, o];[f];[s];[c];[n, y];[i, t];[n, o];[f];[f];[d];[a];7.5;9.0;12.5
+Tricholoma Family;Sulphur Tricholoma;p;[f, x];[y];[y];[f];[s];[d];[y];[i];[y];[f];[f];[d];[a];5.5;5.5;13.0
+Tricholoma Family;St George's Mushroom;e;[f, x];[d, s];[w];[f];[s];[c];[w];[s];[w];[f];[f];[d, m];[s, u];8.5;7.0;30.0
+Tricholoma Family;Clustered Brown Cap;e;[p, x];[y];[g, n];[f];[a];[c];[w];[s];[g, w];[f];[f];[d, g];[a, u];8.0;7.5;14.0
+Tricholoma Family;Plums and custard;p;[f];[y];[e, u, y];[f];[s];[c];[y];[y];[e, u, y];[f];[f];[d];[a];8.0;7.0;17.5
+Wax Gill Family;Ivory Wax Cap;e;[f, x];[s];[w];[f];[d];[d];[w];[s];[w];[f];[f];[g, m];[a, w];3.5;3.5;6.0
+Wax Gill Family;Yellow Wax cap;p;[x];[h, s, t];[o, y];[f];[a];[c];[y];[g];[o];[f];[f];[g];[a, u];4.5;6.0;7.5
+Wax Gill Family;Orange-red Wax Cap;p;[f, x];[s, y];[o];[f];[a, d];[c];[o, y];[s];[o, y];[f];[f];[h, m];[a];2.5;3.0;5.5
+Wax Gill Family;Blackening Wax Cap;p;[b, x];[i, s];[e, k, o];[f];[e];[c];[g, k, y];[s];[k, o, y];[f];[f];[g, m];[a, u];5.5;7.0;7.5
+Wax Gill Family;Meadow Wax Cap;e;[f, s, x];[d, s];[b, o];[f];[d];[d];[b, o];[s];[w];[f];[f];[d, g, m];[a, w];6.5;6.0;12.5
+Wax Gill Family;Scarlet Hood;e;[x];[d, h, s];[e, o, p];[f];[a];[c];[e, o];[s];[e, o];[f];[f];[g, m];[a, u, w];3.5;4.5;6.5
+Russula Family;Common Yellow Russula;e;[f, s, x];[y];[y];[f];[a];[c];[w];[s];[g, w];[f];[f];[d];[a, u, w];7.0;6.0;15.0
+Russula Family;Yellow-gilled Russula;e;[x];[y];[y];[f];[a];[c];[o, y];[s];[w];[f];[f];[d];[a, u];4.0;4.0;9.0
+Russula Family;Geranium-scented Russula;p;[f, s, x];[t];[n, y];[f];[x];[c];[y];[s];[y];[f];[f];[d];[a];7.0;5.5;15.0
+Russula Family;Fragile Russula;p;[f, s];[y];[u];[f];[a];[c];[w];[s];[w, y];[f];[f];[d];[a, u];4.0;4.5;7.5
+Russula Family;Bare-toothed Russula;e;[f, x];[y];[e, n, p];[f];[x];[c];[w];[s];[w];[f];[f];[d];[a, u];7.5;7.0;17.5
+Russula Family;Blackening Russula;e;[f, s, x];[s, t];[k, n, w];[f];[a];[d];[k, y];[s];[w];[f];[f];[d];[a, u, w];16.5;7.0;22.5
+Russula Family;The Sickener;p;[f, x];[h, t];[e];[f];[x];[d];[w];[s];[w];[f];[f];[d];[a, u];7.5;6.0;17.5
+Russula Family;Beechwood Sickener;p;[x];[y];[e, p, w];[f];[a];[c];[g, r, w];[s];[y];[f];[f];[d];[a];5.0;3.5;12.5
+Russula Family;Grass-green Russula;p;[f];[y];[r, y];[f];[x];[c];[n, y];[s];[w];[f];[f];[d];[a, u];7.5;6.5;11.5
+Russula Family;Fleecy Milk Cap;p;[f, s, x];[k];[w];[t];[d];[d];[n, w];[s];[w];[f];[f];[d];[a, u, w];17.5;7.0;30.0
+Russula Family;Oak Milk Cap;p;[s, x];[d];[e, n];[t];[d];[c];[n, w];[s];[e, n];[f];[f];[d];[a];6.5;7.0;9.0
+Russula Family;Slimy Milk Cap;p;[s];[h, t];[g, n, r];[t];[d];[c];[g, w];[t];[g, n, r];[f];[f];[d];[a, u];7.5;4.5;12.5
+Russula Family;Ugly Milk Cap;p;[f, s, x];[t];[g, k, n, r];[t];[d];[c];[b, n, w];[s];[g, n, r];[f];[f];[d, g, l];[a, u];13.5;5.0;25.0
+Russula Family;Rufous Milk Cap;p;[f, s];[d];[e, n];[t];[d];[c];[w, y];[s];[e, n];[f];[f];[d];[a, u];7.0;6.0;9.0
+Russula Family;Sweet Milk Cap;p;[s];[y];[e, n];[t];[d];[c];[b, p, w];[s];[e, n];[f];[f];[d];[a, u];5.5;6.0;6.0
+Russula Family;Small Brown Milk Cap;p;[f, s];[w];[n, o];[t];[d];[c];[n, y];[s];[n];[f];[f];[d];[a, u];3.0;3.5;6.0
+Russula Family;Woolly Milk Cap;p;[s];[t];[p];[t];[d];[c];[p];[s];[p];[t];[f];[d];[a, u];9.0;8.0;15.0
+Russula Family;Saffron Milk Cap;e;[s];[t];[o, p, w];[t];[d];[c];[o];[s];[w];[f];[f];[d];[a, u];10.0;6.0;17.5
+Russula Family;Spruce Milk Cap;p;[s];[y];[o, r, y];[t];[d];[c];[o];[s];[w];[t];[f];[d];[a, u];8.5;5.0;12.5
+Pluteus Family;Veined Pluteus;e;[x];[y];[n];[f];[e];[c];[p, w];[y];[n];[f];[f];[d];[a, u];6.5;5.5;10.0
+Entoloma Family;Silky Nolanea;p;[f, x];[k];[n, w];[f];[s];[c];[p];[s];[n];[f];[f];[g];[a, u];3.5;4.0;3.0
+Entoloma Family;Striated Nolanea;p;[b, f];[t];[n];[f];[x];[c];[p];[i];[g, n];[f];[f];[d, g, m];[a, u];4.0;6.0;4.5
+Entoloma Family;Livid Entoloma;p;[x];[h, s];[g, n, w, y];[f];[s];[c];[p, y];[i];[n];[f];[f];[d];[a, u];12.0;7.5;17.5
+Entoloma Family;The Miller;e;[s, x];[l];[w];[f];[d];[c];[p, w];[s];[w];[f];[f];[d, g];[a, u];7.0;3.5;9.0
+Entoloma Family;Apricot Fungus;p;[f, x];[w];[p];[f];[s];[c];[p];[s];[p];[f];[f];[d];[a, w];7.5;4.5;10.0
+Bolbitius Family;Brown Bell Cap;p;[b];[g];[n, o, w, y];[f];[a];[c];[n];[s];[n];[f];[f];[d, g, m];[a, s, u];2.0;6.0;3.0
+Bolbitius Family;Spring Agaric;e;[x];[y];[n, w];[f];[x];[c];[n, w];[s];[n, w];[t];[z];[d, g];[a, s, u];4.5;8.0;9.0
+Stropharia Family;Brown Stew Fungus;e;[x];[h];[n];[f];[x];[c];[n, w];[s, y];[n];[t];[r];[d];[a, s, u, w];5.5;5.5;6.0
+Stropharia Family;Sulphur Tuft;p;[b, x];[s];[y];[f];[a];[c];[k, r, y];[s];[y];[t];[z];[d];[a, s, u, w];4.0;8.5;7.5
+Stropharia Family;Brick Caps;p;[x];[e];[e];[f];[a];[c];[g, n, w, y];[s];[e, n, y];[t];[z];[d];[a];6.0;8.0;10.0
+Stropharia Family;Verdigris Toadstool;p;[b, x];[h, t, y];[l, r];[f];[s];[c];[g, n, u];[y];[l, n, w];[t];[e];[d, g, m];[a, u];4.0;6.0;7.5
+Stropharia Family;Dung Roundhead;p;[p];[t];[n];[f];[a];[c];[g, n];[t];[y];[t];[e];[m];[a, s, u];2.0;7.0;2.5
+Stropharia Family;Magic Mushroom;p;[b];[t];[n, y];[f];[a];[c];[g, k];[s];[n];[t];[f];[g, m];[a, u];1.0;3.5;2.5
+Cortinarius Family;Red-banded Cortinarius;p;[x];[e, i];[n];[f];[a];[c];[n];[s];[n];[f];[f];[d, h];[a];9.0;10.5;15.0
+Cortinarius Family;Purple Cortinarius;p;[x];[y];[g, n, u];[t];[x];[c];[n, u];[s];[g, n, u];[f];[f];[d];[a];8.5;9.0;20.0
+Cortinarius Family;Red-staining Inocybe;p;[c];[e, k];[w, y];[t];[x];[c];[p, r, y];[s];[w];[f];[f];[d, g];[a, s, u];5.5;6.5;12.5
+Cortinarius Family;Straw-coloured Inocybe;p;[c];[i];[y];[f];[a];[c];[n, r];[s];[w];[f];[f];[d];[a, u];5.0;6.5;7.5
+Cortinarius Family;Common White Inocybe;p;[c, f];[y];[u, w];[f];[a];[c];[n, w];[i];[u, w];[f];[f];[d, p];[a, u];2.5;3.5;3.5
+Cortinarius Family;Poison Pie;p;[x];[s, t];[n];[f];[s];[c];[g, n];[y];[n];[f];[f];[d];[a, w];7.0;5.5;7.5
+Cortinarius Family;Spectacular Gymnopile;p;[x];[d, e, i, y];[o, y];[f];[a];[c];[o, y];[s];[o, y];[t];[r];[d];[a, u, w];10.5;12.0;22.5
+Cortinarius Family;Moss Pixy Cap;p;[b];[h];[n];[f];[a];[c];[n];[t];[n];[f];[f];[d, g, h];[a, s, u];1.5;4.5;1.5
+Mushroom Family;Cultivated Mushroom;e;[f, x];[i, y];[n];[f];[e];[c];[n, p];[s];[w];[t];[l, r];[w];[a, u];6.5;4.5;12.5
+Mushroom Family;Yellow-staining Mushroom;p;[x];[y];[w];[t];[a];[c];[g, n, p, w];[s];[w];[t];[l];[d, g];[a, u];7.5;8.0;14.0
+Mushroom Family;Bleeding Brown Mushroom;e;[p, x];[i, y];[n];[t];[e];[c];[p];[y];[w];[t];[l, p];[d, l];[a];10.0;9.0;17.5
+Ink Cap Family;Shaggy Ink Cap;e;[f, p];[s, y];[w];[f];[e];[c];[k, p, w];[s];[w];[t];[e];[d, g, u];[a, s, u, w];10.0;18.67;12.5
+Ink Cap Family;Common Ink Cap;p;[b, p];[s, y];[g, n];[f];[a];[c];[g, k, w];[s];[w];[t];[z];[d, g];[a, s, u, w];6.0;10.0;12.5
+Ink Cap Family;Magpie Ink Cap;p;[b, p];[y];[n, w];[f];[a];[c];[k, p];[s];[w];[f];[f];[d];[a];8.0;15.0;17.5
+Ink Cap Family;Rusty Carpet Ink Cap;p;[b];[y];[n];[f];[a];[c];[g, u, w];[s];[w];[f];[f];[d];[a, u];3.5;6.0;4.5
+Ink Cap Family;Glistening Ink Cap;e;[b];[y];[n];[f];[a];[c];[k, n];[s];[w];[f];[f];[d];[a, s, u, w];3.0;6.5;3.0
+Ink Cap Family;Common Crumble Cap;e;[f, x];[y];[n, w, y];[f];[x];[c];[g, n, u, w];[s];[w];[f];[f];[d];[a, u];4.5;6.5;4.0
+Ink Cap Family;Two-toned Crumble Cap;e;[f, x];[h];[n];[f];[a];[c];[k, n];[s];[w];[f];[f];[d];[a, u];3.5;6.0;6.5
+Ink Cap Family;Egg-shell Toadstool;p;[b];[h, t];[n];[f];[a];[c];[k, n];[s];[w];[t];[z];[g];[a, u, w];4.0;10.0;6.0
+Ink Cap Family;Weeping Widow;p;[x];[i];[n, y];[f];[a];[c];[k, n];[i];[n];[t];[z];[d, g];[a, u];7.5;8.0;8.0
+Bolete Family;Cep;e;[p, x];[t, w];[n];[f];[p];[c];[w, y];[s];[n];[f];[f];[d];[a, u];19.0;16.5;47.80000000000001
+Bolete Family;Bay Bolete;e;[x];[h, t];[n];[t];[p];[c];[y];[s];[n];[f];[f];[d];[a, u];11.0;8.5;22.5
+Bolete Family;Yellow-cracked Bolete;e;[x];[d];[n, y];[t];[p];[c];[y];[s];[y];[f];[f];[d];[a, u];6.5;7.0;15.0
+Bolete Family;Lurid Bolete;p;[x];[e];[n, y];[t];[p];[c];[e, o];[s];[e, u];[f];[f];[d];[a, u];11.0;8.5;27.5
+Bolete Family;Parasitic Bolete;e;[x];[d, k];[n];[f];[p];[c];[e, n, y];[s];[n, y];[f];[f];[d];[a];3.5;4.5;10.0
+Bolete Family;Bitter Bolete;p;[p, x];[y];[n];[f];[p];[c];[p, w];[s];[n];[f];[f];[d];[a, u];9.5;10.0;30.0
+Bolete Family;Orange Birch Bolete;e;[p, x];[d];[e, n, o];[f];[p];[c];[n, w];[y];[w];[f];[f];[d];[a, u];18.5;16.0;35.0
+Bolete Family;Larch Bolete;e;[x];[h, t];[y];[f];[p];[c];[y];[s];[y];[t];[z];[d];[a, u];8.0;7.5;15.0
+Bolete Family;Slippery Jack;e;[x];[h, s, t];[n];[t];[p];[c];[n, y];[s];[n];[t];[p];[d];[a, u];9.0;7.5;17.5
+Bolete Family;Shallow-pored Bolete;e;[x];[h, t];[n];[f];[p];[d];[y];[s];[n];[f];[f];[d, g, h];[a, u];8.0;7.0;12.5
+Paxillus Family;Brown Roll-rim;p;[f, s, x];[t];[n, r];[t];[d];[c];[n];[s];[n];[f];[f];[d, h];[a, u];11.0;6.0;15.0
+Paxillus Family;Velvet Roll-rim;p;[f, s];[d, k, s];[n];[f];[d];[c];[y];[k];[k, n];[f];[f];[d];[a, u];16.5;6.0;35.0
+Chanterelle Family;Tubed Chanterelle;e;[s];[y];[n, y];[f];[f];[f];[f];[s];[o, y];[f];[f];[d];[a];3.5;6.5;7.5
+Chanterelle Family;Horn of Plenty;e;[o, s];[l];[n];[f];[f];[f];[f];[s];[n];[f];[f];[d, l];[a, u, w];5.0;7.0;47.80000000000001
+Oyster Mushroom Family;Oyster Mushroom;e;[f];[y];[b, g, l, w];[f];[d];[c];[w, y];[s];[w];[f];[f];[d];[a, w];11.5;2.5;15.0
+Tricholoma Family;Olive-brown Panellus;p;[o];[e, k, t];[n, o, r, y];[f];[a];[c];[o, y];[s];[n, y];[f];[f];[d];[a, w];7.5;1.5;15.0
+Crepidotus Family;Soft Slipper Toadstool;p;[o];[s, t];[n, w];[f];[a];[c];[w];[f];[f];[f];[f];[d];[a, u];4.5;0.0;0.0
+Hydnum Family;Hedgehog Fungus;e;[f];[e];[b];[f];[a];[c];[b];[s];[w];[t];[f];[d];[a];10.0;5.0;20.0
+Ear-Pick Family;Ear-pick Fungus;p;[o, x];[k];[n];[f];[a];[c];[n];[s];[n];[f];[f];[d];[a, s, u, w];1.5;4.0;1.5
+Bracket Fungi;Silver Leaf Fungus;p;[o];[l];[g];[f];[f];[f];[f];[f];[f];[f];[f];[d];[a, s, u, w];3.0;0.0;0.0
+Bracket Fungi;Dryad's Saddle;e;[o];[y];[y];[f];[p];[c];[y];[k];[k, n];[f];[f];[d];[s, u];19.0;6.5;35.0
+Bracket Fungi;Fuzzy Polypore;p;[f, x];[d, g, s];[e, k, n, o];[f];[p];[c];[y];[s];[n];[f];[f];[d];[a, w];19.0;5.5;40.0
+Bracket Fungi;Brown Goblet;p;[f, s];[k];[n, y];[f];[p];[c];[n];[k];[n];[t];[f];[d];[u];5.0;3.5;5.5
+Saddle-Cup Family;White Saddle;p;[o];[y];[w];[f];[f];[f];[f];[g];[w];[t];[f];[d, p];[a, u];4.0;5.5;30.0
+Bracket Fungi;Elfin's Saddle;p;[o];[y];[g, k];[f];[f];[f];[f];[g];[g, n];[f];[f];[d];[a, u];3.0;3.5;15.0
+Morel Family;Common Morel;e;[c, o, p];[y];[g, n];[f];[f];[f];[f];[s];[n];[f];[f];[d, l];[s];5.5;5.5;20.0
+Jelly Discs Family;Jelly Babies;p;[f, s, x];[s];[y];[f];[f];[f];[f];[s];[y];[f];[f];[d];[a, u];1.25;3.5;5.5

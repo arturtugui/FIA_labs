@@ -480,3 +480,49 @@ family-by-family counts are in
 the split files are [`2.1_train.csv`](processed_data/2.1_train.csv) and
 [`2.1_test.csv`](processed_data/2.1_test.csv). This is one fixed holdout, not
 a repeated cross-validation result.
+
+## Task 2.2 — Training-fitted imputation and outlier capping
+
+The script `task 2 classification/2.2_train_fitted_imputation_capping.py`
+learns the fill values and the caps from the **123 training rows only**, then
+applies the same values to train and test. Learning them from all 173 rows
+would let the test mushrooms influence the training data (data leakage).
+Outputs: [`2.2_train_prepared.csv`](processed_data/2.2_train_prepared.csv),
+[`2.2_test_prepared.csv`](processed_data/2.2_test_prepared.csv) and
+[`2.2_preparation_summary.md`](<task 2 classification/2.2_preparation_summary.md>).
+
+**Missing values.** No numeric column has blanks (Step 1.5), so only
+categorical columns are filled. Each blank is replaced by the most frequent
+complete cell in the training rows (after the Step 1.11 sorting, so `[f, x]`
+and `[x, f]` count as one value).
+
+| Column | Fill value | Training rows behind it | Blanks filled (train / test) | Train rows holding it afterwards |
+|---|---|---:|---:|---:|
+| cap-surface | `[y]` | 11 | 27 / 13 | 30.9% |
+| gill-attachment | `[a]` | 23 | 17 / 11 | 32.5% |
+| gill-spacing | `[c]` | 52 | 50 / 21 | 82.9% |
+| stem-surface | `[s]` | 14 | 73 / 35 | 70.7% |
+| ring-type | `[z]` | 4 | 4 / 3 | 6.5% |
+
+`ring-type` uses a different rule. All its blanks occur with `has-ring = [t]`
+(Step 1.3), while its overall mode `[f]` means no ring, so filling with `[f]`
+would create new contradictions. The fill value is therefore the most frequent
+ring type among training rows with `has-ring = [t]`, ignoring `[f]`.
+
+Limitation: `stem-surface` is 62.4% blank, so mode imputation turns `[s]`,
+observed in only 14 training rows, into the value of 70.7% of training rows.
+This was accepted to keep the column; models may treat `[s]` as more typical
+than the recorded data shows.
+
+**Outliers.** The large values flagged in Steps 1.4–1.5 are real mushrooms, so
+they are not removed. Instead, each numeric midpoint is capped at the training
+99th percentile, which only lowers the most extreme values. No lower cap is
+needed: the minimum values are 0 (stem-less fungi), which are real.
+
+| Midpoint column | Cap (train 99th percentile) | Capped values |
+|---|---:|---|
+| cap-diameter-midpoint | 19.0 | Dryad's Saddle 50 → 19 |
+| stem-height-midpoint | 18.67 | Parasol Mushroom 25 → 18.67, Shaggy Ink Cap 19 → 18.67 |
+| stem-width-midpoint | 47.8 | Cep 70 → 47.8, Horn of Plenty 50 → 47.8 |
+
+All five capped values are in the training set; no test value exceeded a cap.
