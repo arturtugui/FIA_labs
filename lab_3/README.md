@@ -1438,3 +1438,119 @@ four runs are in
   small families added in these runs have 1–3 mushrooms, which can hardly be
   split (a family of one mushroom is always "together"), so they raise the
   average. The large families are not more together than in run 1.
+
+# Task 6 — Clustering versus classification
+
+The script `task 6 conclusions/6.1_clustering_vs_classification.py` puts the
+Task 4 and Task 5 results side by side. It uses the k = 23 clustering run (all
+173 mushrooms, one cluster per family) and the test predictions of the best
+classifier (random forest) and of KNN; nothing is retrained. Each cluster's
+**cluster family** is its largest family. Full tables are in
+[`6.1_comparison_summary.md`](<task 6 conclusions/6.1_comparison_summary.md>).
+
+## 6.1 Per family
+
+For each family with test mushrooms: how many test mushrooms the classifiers
+found, and how well the family stays together in the clusters.
+
+| Family | Mushrooms | Random forest found (test) | KNN found (test) | Clusters it is spread over (k = 23) | Share in its main cluster | Largest family of that cluster? |
+|---|---:|---:|---:|---:|---:|---|
+| Tricholoma | 43 | 12/13 | 5/13 | 16 | 16% | yes |
+| Russula | 27 | 6/8 | 5/8 | 8 | 26% | yes |
+| Bolete | 14 | 4/4 | 4/4 | 4 | 36% | yes |
+| Ink Cap | 13 | 1/4 | 3/4 | 5 | 69% | yes |
+| Cortinarius | 11 | 0/3 | 1/3 | 8 | 36% | no (Russula) |
+| Amanita | 8 | 1/2 | 2/2 | 2 | 62% | yes |
+| Stropharia | 8 | 2/2 | 0/2 | 3 | 50% | yes |
+| Wax Gill | 8 | 0/2 | 0/2 | 4 | 50% | yes |
+| Bracket Fungi | 7 | 2/2 | 2/2 | 3 | 57% | yes |
+| Entoloma | 7 | 2/2 | 2/2 | 4 | 57% | yes |
+| Mushroom | 5 | 1/2 | 2/2 | 3 | 60% | yes |
+| Bolbitius | 3 | 0/1 | 0/1 | 2 | 67% | yes |
+| Chanterelle | 3 | 1/1 | 1/1 | 2 | 67% | yes |
+| Lepiota | 3 | 0/1 | 0/1 | 3 | 33% | no (Stropharia) |
+| Paxillus | 3 | 0/1 | 0/1 | 2 | 67% | no (Russula) |
+| Oyster Mushroom | 2 | 0/1 | 0/1 | 2 | 50% | no (Tricholoma) |
+| Pluteus | 2 | 1/1 | 0/1 | 1 | 100% | no (Tricholoma) |
+
+## 6.2 Per test mushroom
+
+For each of the 50 test mushrooms, the random forest's prediction is compared
+with the cluster family of the cluster the mushroom fell into:
+
+| Random forest prediction | Test mushrooms | Cluster family = real family | Cluster family = predicted family |
+|---|---:|---:|---:|
+| Correct | 33 | 25 | 25 |
+| Wrong | 17 | 7 | 2 |
+
+- When the forest is **right**, the cluster usually agrees (25 of 33).
+- When the forest is **wrong**, the cluster rarely shares its mistake (2 of
+  17), and in **7 of the 17 mistakes the cluster points to the correct
+  family**. The clearest case is Ink Cap: Fairies' Bonnets, Fairy Parasol and
+  Hay Cap all sit in cluster C18, whose largest family is Ink Cap (9 of the 13
+  Ink Cap mushrooms are in it), yet the forest predicted Tricholoma for all
+  three. The same happens for Field Mushroom (cluster of Mushroom Family),
+  Egg Yolk Fungus (cluster of Bolbitius), Field Blewit (cluster of
+  Tricholoma) and Birch Russula (cluster of Russula).
+
+## 6.3 Where they agree and disagree
+
+| Pattern | Families | Reading |
+|---|---|---|
+| **Both good**: classifiers find the family and it stays together in one cluster | Bracket Fungi, Entoloma, Chanterelle | These families look distinct; both approaches see it. |
+| **Classification good, clustering split** | Tricholoma (12/13 found, spread over 16 clusters), Russula, Bolete | Large families whose mushrooms differ in appearance (especially colour). The classifier learned the few features that still identify the family; K-Means, which weighs all 94 columns equally, splits them by look. |
+| **Clustering together, random forest poor, KNN good** | Ink Cap (69% in one cluster; forest 1/4, KNN 3/4), Amanita, Mushroom | The mushrooms are similar to each other, so distance-based methods (K-Means and KNN) group them, but the forest falls back to Tricholoma, the family with the most training examples. |
+| **Both poor** | Cortinarius, Lepiota, Paxillus, Oyster Mushroom | Cortinarius is spread over 8 clusters and is not the largest family of any; the others have only 2–3 mushrooms and fall into clusters of other families. These families have no feature pattern of their own in this data. |
+
+**KNN and K-Means agree with each other more than with the random forest.**
+Both use the same Euclidean distance over all 94 columns, so they share the
+same view of which mushrooms are similar. The random forest instead learns,
+from the labels, which columns separate the families.
+
+## 6.4 What each approach reveals that the other misses
+
+**Classification reveals:**
+
+- which features separate the families: `gill-attachment`, `gill-color`,
+  `cap-shape` and `ring-type` carry the most importance (Task 3);
+- that a large, varied family such as Tricholoma can still be recognised
+  (12 of 13) although its members look different from each other, because a
+  few features are shared within the family;
+- how far the family can be predicted at all: about 66% of test mushrooms
+  with the best model.
+
+**Clustering reveals:**
+
+- that the mushrooms group mainly by **appearance**, not by family: purity
+  stays around 0.5 even when only the five largest families are clustered
+  (Task 5);
+- that large families consist of several **look-alike subgroups**
+  (Tricholoma spread over 16 clusters, Russula over 8), which a classifier's
+  single label hides;
+- that some families **look like each other**: the ringed families Amanita,
+  Mushroom and Lepiota share a cluster at k = 15, which explains why the
+  classifiers confuse them (the Lepiota test mushroom was predicted as
+  Amanita);
+- a **bias of the random forest**: several of its mistakes are mushrooms that
+  clearly belong to a tight group of their own family (Ink Cap), which the
+  forest overrides with the most common family.
+
+## 6.5 Overall conclusions
+
+1. **Family can be predicted only partly from these features.** The best
+   model (random forest) classifies 66% of test mushrooms correctly, against
+   26% for always guessing Tricholoma, and K-Means recovers families only for
+   the few with a distinctive look.
+2. **The features describe appearance, and family is only partly a matter of
+   appearance.** Families with a clear feature (a ring, unusual shape) are
+   found by both approaches; families whose members vary (Tricholoma, Russula)
+   are found only by a classifier that knows the labels; families with no
+   pattern of their own are found by neither.
+3. **The data limits both approaches.** 173 mushrooms in 23 families, six of
+   them with a single mushroom, many blanks filled with modes, and a small
+   test set (50 mushrooms) all limit what any model can learn or prove.
+4. **The two views complement each other.** The classifier is the better tool
+   for naming the family; the clusters show where its mistakes come from
+   (look-alike families, varied large families) and suggest an improvement:
+   combining a distance-based view (KNN, which finds tight small families)
+   with the random forest (which handles large varied families).
