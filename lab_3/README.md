@@ -590,10 +590,39 @@ For comparison, always guessing the most common family (Tricholoma) gets
 30/123 = **24.4%** on training and 13/50 = **26.0%** on test. The tree is only
 4 percentage points better than this guess on unseen mushrooms.
 
-Accuracy counts every mushroom equally, so the many Tricholoma mushrooms
-dominate it. Macro F1 gives every family the same weight instead: the tree
-scores **0.190** on test and the always-Tricholoma guess scores **0.024**
-(1.0 would be perfect).
+#### What macro F1 means
+
+Accuracy counts every mushroom equally, so the 13 Tricholoma mushrooms in the
+test set dominate it: a model that only ever says "Tricholoma" already gets
+26%. **Macro F1** is used next to accuracy because it gives **every family the
+same weight**, however many mushrooms it has. It is built in three steps, for
+each family separately:
+
+- **Precision**: of the mushrooms the model *called* this family, how many
+  really are? (Are its guesses of this family trustworthy?)
+- **Recall**: of the mushrooms that *really are* this family, how many did the
+  model find? (Does it miss this family?)
+- **F1**: one number combining both, `F1 = 2 × precision × recall /
+  (precision + recall)`. It is high only when both are high, and 0 when the
+  model never gets this family right.
+
+Example with the tree's test results for Tricholoma: the tree said
+"Tricholoma" 23 times and 8 of those were right, so precision = 8 / 23 =
+0.348; there are 13 Tricholoma mushrooms in the test set and the tree found 8,
+so recall = 8 / 13 = 0.615; F1 = 2 × 0.348 × 0.615 / (0.348 + 0.615) = 0.444.
+
+**Macro F1 is the plain average of the F1 values of all families**, so a small
+family with 1 test mushroom counts as much as Tricholoma with 13. The families
+included are those that appear in the test set or in the predictions (17 + 2
+for the tree); a family the model never gets right has F1 = 0. Macro F1 goes
+from 0 (worst) to 1 (every mushroom of every family right).
+
+The tree scores **0.190** on test. Always guessing Tricholoma scores only
+**0.024**: Tricholoma gets F1 = 0.413 (precision 13 / 50, recall 13 / 13), every
+other family gets 0, and 0.413 averaged over 17 families is 0.024. So a model
+can have a reasonable accuracy and still a very low macro F1 when it ignores
+the small families; macro F1 is therefore the main score for choosing settings
+in the later models.
 
 ### Why training is 100% but test is only 30%
 
