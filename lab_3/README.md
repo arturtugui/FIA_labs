@@ -1,21 +1,60 @@
-# FIA LAB 3
+# FCIM.FIA — Laboratory 3: Learning
 
-1. Exploratory data analysis
+**"Ma-ma-ma-Mushroom": classifying and clustering Lunarian mushrooms**
 
-## Step 1.1 — Load and inspect the catalogue
+## About this laboratory
 
-- the initial data.csv has in the 1st row all the column names and all the subsequent rows dont seem to have multiple entries per cell
+The Luna-City Mycological Authority's species catalogue
+(`lab_condition/data.csv`) lists **173 mushroom species** in **23 families**.
+Each row gives a species' `family`, `name`, edibility `class` (`e`/`p`) and 20
+descriptive features: letter codes for shapes, colours and surfaces (often
+several in one cell, e.g. `[x, f]`), size ranges such as `[10, 20]`, and many
+blank cells. The goal is to explore and clean this catalogue, define our own
+Common / Rare / Legendary tier, **predict a mushroom's family** from its
+features, and check whether **clustering** finds the families without being
+told them.
 
-- so i made a script that puts each ; in its own cell
+| Task | Points | What is done | Methods |
+|---|---:|---|---|
+| 1. Exploratory data analysis | 2 | Inspection, missing values, column types, distributions, associations, preprocessing, rarity tiers | pandas, matplotlib / seaborn |
+| 2. Simple classifiers | 1 | Train/test split, training-only imputation and capping, encoding and scaling, two classifiers | Multi-way decision tree (disorder), K-Nearest Neighbours |
+| 3. Ensemble classifiers | 1.5 | Two ensembles, settings chosen by leave-one-out | Random forest, gradient boosting |
+| 4. Performance of all models | 1.5 | One comparison with metrics suited to unbalanced families | Accuracy, balanced accuracy, macro / weighted F1, MCC, bootstrap ranges |
+| 5. Clustering | 2 | Clustering with `family` held out, k = number of families | K-Means, PCA |
+| 6. Conclusions | 1 | Where clustering and classification agree and disagree | — |
 
-- `processed_data/1_1_readable_catalogue.csv` - one row per mushroom and one column per
-  field, so the data can be inspected in a spreadsheet without changing the
-  original semicolon-delimited source.
+**Main results.** The best classifier, the random forest, classifies 66% of
+the test mushrooms correctly (macro F1 0.49), against 26% for always guessing
+the most common family. K-Means groups mushrooms mainly by appearance
+(colour, ring, shape) and recovers only the families with a distinctive look.
 
+**Project structure.** Each task has its own folder of numbered Python
+scripts (`task 1 eda/`, `task 2 classification/`, `task 3 ensembles/`,
+`task 4 evaluation/`, `task 5 clustering/`, `task 6 conclusions/`); a script
+named `2.5_…` belongs to section 2.5 below. Intermediate data files are
+written to `processed_data/`, and figures and summary tables sit next to the
+script that produced them. The original `lab_condition/data.csv` is never
+modified. The scripts use Python 3 with pandas, numpy, matplotlib, seaborn and
+scikit-learn, and every random step uses the fixed seed 42, so re-running a
+script gives the same results.
 
-## Step 1.2 — Unique values and missingness
+## Task 1 — Exploratory data analysis
 
-* 1.2.1 row analysis
+### 1.1 — Load and inspect the catalogue
+
+`lab_condition/data.csv` is a semicolon-separated text file: the first row
+holds the 23 column names and every following row describes one mushroom.
+Opened directly in a spreadsheet, each whole row appears in a single cell. The
+script `task 1 eda/1.1_inspect_catalogue.py` reads the file with `;` as the
+separator, keeps blank cells blank, checks that every row has as many fields
+as the header, and writes
+[`processed_data/1_1_readable_catalogue.csv`](processed_data/1_1_readable_catalogue.csv):
+one row per mushroom and one column per field, so the data can be inspected in
+a spreadsheet without changing the original file.
+
+### 1.2 — Unique values and missingness
+
+#### 1.2.1 — Unique values and empty cells per column
 
 Unique values below mean distinct, nonblank raw cell contents. Bracketed values
 such as `[x, f]` are counted as one cell value here. Empty-cell percentages for
@@ -36,11 +75,11 @@ Columns with fewer than 5 unique cell values:
 | veil-type | `[u]` |
 | has-ring | `[t]`, `[f]` |
 
-* 1.2.2 columns types
+#### 1.2.2 — Column roles
 
 For this analysis, `name` is the identifier, `family` is the classification target, `class` is a separate analysis label, and the remaining 20 mushroom-description columns are features.
 
-* 1.2.3 row analysis
+#### 1.2.3 — Empty cells per row
 
 The following table groups rows by the percentage of their 23 columns that are
 empty. The bands include their lower bound and exclude their upper bound, except
@@ -57,7 +96,7 @@ for the final band. Exactly 0% is also shown separately.
 
 Rows have 2–8 empty columns, averaging 5.03 empty columns per row.
 
-* 1.2.4 row duplicates
+#### 1.2.4 — Duplicates
 
 I checked for exact duplicate rows, repeated `name` identifiers, and repeated
 mushroom feature profiles (the 20 description columns, excluding `family`,
@@ -65,14 +104,14 @@ mushroom feature profiles (the 20 description columns, excluding `family`,
 is one kind of duplicate, but identical records or feature profiles are separate
 checks.
 
-## Step 1.3 — Missingness patterns
+### 1.3 — Missingness patterns
 
 Missingness was analysed across the 20 mushroom-description features; `family`,
 `name`, and `class` were excluded from row-level feature counts. A blank is
 treated as an unrecorded value at this stage. These plots describe the pattern
 but do not establish why a value is blank.
 
-### Missing feature values per mushroom
+#### Missing feature values per mushroom
 
 ![Histogram of empty feature columns per mushroom](<task 1 eda/plots/1.3_01_missingness_per_row.png>)
 
@@ -83,7 +122,7 @@ count is 5 empty feature columns (65 mushrooms).
 
 Out of the 20 feature columns, 9 have at least one blank cell; the other 11 have no blanks and are therefore omitted from the missingness heatmaps.
 
-### Co-occurrence of blank values
+#### Co-occurrence of blank values
 
 ![Heatmap of feature blank co-occurrence](<task 1 eda/plots/1.3_02_missingness_cooccurrence.png>)
 
@@ -95,7 +134,7 @@ values partly reflect that the individual columns are often blank; co-occurrence
 alone does not show whether the relationship is stronger than expected by
 chance or explain why values are missing.
 
-### Missingness by family
+#### Missingness by family
 
 ![Heatmap of feature missingness by family](<task 1 eda/plots/1.3_03_missingness_by_family.png>)
 
@@ -107,7 +146,7 @@ distributed across the catalogue. The plot cannot determine whether that
 pattern reflects biology, recording practices, or both. Rates for families
 with very few examples are especially unstable.
 
-### Missingness by class
+#### Missingness by class
 
 ![Heatmap of feature missingness by class](<task 1 eda/plots/1.3_04_missingness_by_class.png>)
 
@@ -117,7 +156,7 @@ features. Some differences remain—for example, `stem-surface` is blank in
 93.5% and 86.5%, respectively. These descriptive differences do not establish
 a meaningful association, particularly with the small dataset.
 
-### Follow-up: pairwise missingness after accounting for family
+#### Follow-up: pairwise missingness after accounting for family
 
 To check whether two features are blank together more often than expected
 within the same families, I compared their observed co-occurrence with the
@@ -133,7 +172,7 @@ rate within each family, no pair has a large extra co-occurrence in this
 dataset. These are descriptive comparisons, not significance tests; see the
 [full pairwise table](<task 1 eda/plots/1.3_05_family_adjusted_cooccurrence.md>).
 
-### Follow-up: blanks in related features
+#### Follow-up: blanks in related features
 
 The cross-tabs below compare blank status in one column with the value in a
 related column. Percentages are calculated within each row group.
@@ -164,7 +203,7 @@ the evidence.
 The PNGs remain in `task 1 eda/plots/`; matching `.md` files in that folder
 contain the underlying values for each figure.
 
-## Step 1.4 — Column types and distributions
+### 1.4 — Column types and distributions
 
 The table records each column's role and variable type. The letter codes are
 treated as categorical values; their biological meanings are not assumed
@@ -196,7 +235,7 @@ because no data dictionary was supplied.
 | habitat | Feature | Multi-valued categorical | Cell may list more than one nominal code. |
 | season | Feature | Multi-valued categorical | Cell may list more than one nominal code. |
 
-### Family distribution
+#### Family distribution
 
 ![Mushroom counts by family](<task 1 eda/plots/1.4_02_family_distribution.png>)
 
@@ -235,7 +274,7 @@ imbalance will matter when choosing and evaluating family classifiers. The
 The two largest families hold 40.5% of all mushrooms, while the 12 smallest
 families (3 or fewer mushrooms each) hold 22 mushrooms together (12.7%).
 
-### Class distribution
+#### Class distribution
 
 ![Mushroom counts by class code](<task 1 eda/plots/1.4_03_class_distribution.png>)
 
@@ -243,7 +282,7 @@ families (3 or fewer mushrooms each) hold 22 mushrooms together (12.7%).
 moderate imbalance. The plot shows the codes as recorded and does not assign
 them a biological meaning.
 
-### Class composition by family
+#### Class composition by family
 
 ![Class composition within each family](<task 1 eda/plots/1.4_04_class_by_family.png>)
 
@@ -252,7 +291,7 @@ has 23 `e` and 20 `p` mushrooms, while Russula has 11 `e` and 16 `p`; some
 families contain only one recorded class. The single-mushroom families cannot
 support a reliable conclusion about their class proportions. See the [family-by-class table](<task 1 eda/plots/1.4_04_class_by_family.md>) for all counts.
 
-### Numeric ranges by class
+#### Numeric ranges by class
 
 ![Numeric range midpoints by class](<task 1 eda/plots/1.4_05_numeric_by_class.png>)
 
@@ -282,7 +321,7 @@ as possible outliers, not automatic removal. The [numeric summary table](<task 1
 The type table and plot data tables are generated by
 `task 1 eda/1.4_column_types_distributions.py`.
 
-## Step 1.5 — Numeric range checks and representation
+### 1.5 — Numeric range checks and representation
 
 The three numeric columns store intervals as `[minimum, maximum]`. The
 `1.5_numeric_ranges.py` script parsed these intervals, treated a single value
@@ -324,7 +363,7 @@ typical size and range spread without entering both endpoints directly. This
 is a representation choice for later modelling, not a claim that the resulting
 features are independent.
 
-## Step 1.7 — Association analysis
+### 1.7 — Association analysis
 
 These plots compare features with one another and with `family` and `class`.
 They can show patterns worth checking in later modelling, but they do not show
@@ -370,7 +409,7 @@ stem height and 0.578 for stem width. For `class`, the values are lower at
 show clearer group differences by family than by class in this dataset, though
 this alone does not guarantee accurate predictions.
 
-## Step 1.8 — Values in columns that contain blanks
+### 1.8 — Values in columns that contain blanks
 
 The `1.8_missing_value_distributions.py` script counts blanks and the
 frequencies of complete nonblank cell values. Multi-valued cells such as
@@ -398,7 +437,7 @@ blanks, so median imputation is not needed. Missing values remain unchanged at
 this step; the final handling is decided in Step 1.11 (the sparse columns are
 dropped) and Task 2.2 (the remaining blanks are filled with training modes).
 
-## Step 1.9 — Feature value frequencies for tier design
+### 1.9 — Feature value frequencies for tier design
 
 The `1.9_feature_value_frequencies.py` script calculates each value's
 frequency as `count / total observed rows for that feature`. For a multi-valued
@@ -416,7 +455,7 @@ The full table is available as
 [`1.9_feature_value_frequencies.md`](<task 1 eda/plots/1.9_feature_value_frequencies.md>)
 and [`1.9_feature_value_frequencies.csv`](processed_data/1.9_feature_value_frequencies.csv).
 
-## Step 1.10 — Rarity score and provisional tiers
+### 1.10 — Rarity score and provisional tiers
 
 The `1.10_rarity_tier_scoring.py` script applies the agreed point bands to
 feature values, sums the observed feature contributions, and adjusts the sum
@@ -469,7 +508,7 @@ individual Legendary scores are in
 [`1.10_rarity_scoring.md`](<task 1 eda/plots/1.10_rarity_scoring.md>) and
 [`1.10_rarity_scores.csv`](processed_data/1.10_rarity_scores.csv).
 
-## Step 1.11 — Fixed-rule preprocessing
+### 1.11 — Fixed-rule preprocessing
 
 The `1.11_preprocessing.py` script applies the preprocessing rules that do not
 learn anything from the data, so they can be applied to all 173 rows before
@@ -492,7 +531,9 @@ The rarity tiers from Step 1.10 were computed on the raw catalogue and are not
 recomputed from this cleaned file.
 
 
-## Task 2.1 — Family-stratified train/test split
+## Task 2 — Simple classifiers
+
+### 2.1 — Family-stratified train/test split
 
 The script `task 2 classification/2.1_family_stratified_split.py` splits the
 Step 1.11 cleaned file into an approximately 70/30 holdout with random seed 42.
@@ -511,7 +552,7 @@ the split files are [`2.1_train.csv`](processed_data/2.1_train.csv) and
 [`2.1_test.csv`](processed_data/2.1_test.csv). This is one fixed holdout, not
 a repeated cross-validation result.
 
-## Task 2.2 — Training-fitted imputation and outlier capping
+### 2.2 — Training-fitted imputation and outlier capping
 
 The script `task 2 classification/2.2_train_fitted_imputation_capping.py`
 learns the fill values and the caps from the **123 training rows only**, then
@@ -557,7 +598,7 @@ needed: the minimum values are 0 (stem-less fungi), which are real.
 
 All five capped values are in the training set; no test value exceeded a cap.
 
-## Task 2.3 — Multi-way decision tree using disorder
+### 2.3 — Multi-way decision tree using disorder
 
 The script `task 2 classification/decision tree/2.3_disorder_decision_tree.py`
 builds the tree as it was done in class. The **disorder** of a set of
@@ -609,7 +650,7 @@ homogeneous, so the tree classifies **all 123 training mushrooms correctly
 families, so this was always possible. The full tree is in
 [`2.3_tree.txt`](<task 2 classification/decision tree/2.3_tree.txt>).
 
-### Results
+#### Results
 
 | Data | Mushrooms | Correctly classified | Accuracy |
 |---|---:|---:|---:|
@@ -620,7 +661,7 @@ For comparison, always guessing the most common family (Tricholoma) gets
 30/123 = **24.4%** on training and 13/50 = **26.0%** on test. The tree is only
 4 percentage points better than this guess on unseen mushrooms.
 
-#### What macro F1 means
+##### What macro F1 means
 
 Accuracy counts every mushroom equally, so the 13 Tricholoma mushrooms in the
 test set dominate it: a model that only ever says "Tricholoma" already gets
@@ -654,7 +695,7 @@ can have a reasonable accuracy and still a very low macro F1 when it ignores
 the small families; macro F1 is therefore the main score for choosing settings
 in the later models.
 
-### Why training is 100% but test is only 30%
+#### Why training is 100% but test is only 30%
 
 The tree keeps asking questions until every branch has a single family, so it
 always gets the training mushrooms right. It does this by memorising them
@@ -678,7 +719,7 @@ Per-family scores and individual predictions are in
 [`2.3_tree_summary.md`](<task 2 classification/decision tree/2.3_tree_summary.md>)
 and [`2.3_test_predictions.csv`](<task 2 classification/decision tree/2.3_test_predictions.csv>).
 
-## Task 2.4 — Encoding and scaling (models like numbers, same scale)
+### 2.4 — Encoding and scaling (models like numbers, same scale)
 
 KNN (and later K-Means) compares mushrooms by distance, and a distance can
 only be computed between numbers. The disorder tree (Task 2.3) uses the
@@ -690,7 +731,7 @@ and [`2.4_test_encoded.csv`](processed_data/2.4_test_encoded.csv). As in Task
 50 test rows. Details are in
 [`2.4_encoding_summary.md`](<task 2 classification/2.4_encoding_summary.md>).
 
-### Categorical columns → dummy columns
+#### Categorical columns → dummy columns
 
 Each code becomes its own 0/1 column, named `column=code`. A cell that lists
 several codes gets a 1 in each of them, so `cap-shape = [f, x]` gives
@@ -722,7 +763,7 @@ so the model could not tell them apart. The distance would also measure how
 encoding is useful when a column has thousands of categories; here dummy
 columns give a manageable number of columns.
 
-### Removing duplicate columns
+#### Removing duplicate columns
 
 Following the course step "remove duplicates", the new columns were checked:
 
@@ -738,7 +779,7 @@ Hairy Stereum). They have `[f]` in every gill or stem column, so `f` probably
 means "none". Keeping all three gill columns would count "no gills" three
 times in every distance. No column was constant.
 
-### Numeric columns → same scale
+#### Numeric columns → same scale
 
 | Column | Training range (after 2.2 capping) | Scaled training range | Scaled test range |
 |---|---|---|---|
@@ -754,7 +795,7 @@ the dummy columns. Without scaling, stem width (up to 47.8) would outweigh
 every 0/1 column in a distance. The dummy columns are not scaled: they are
 already 0/1, and standardising them would turn rare codes into large values.
 
-### Result
+#### Result
 
 **94 feature columns**: 91 dummy columns + 3 scaled numeric columns, for 123
 training and 50 test mushrooms. Because 91 of the 94 columns are categorical,
@@ -762,7 +803,7 @@ the categorical features will have much more influence on KNN distances than
 the three size measurements. This follows from the data, not from an error,
 and is relevant when interpreting KNN results.
 
-## Task 2.5 — K-Nearest Neighbours on all 94 features
+### 2.5 — K-Nearest Neighbours on all 94 features
 
 The script `task 2 classification/knn/2.5_knn_all_features.py` uses
 scikit-learn's `KNeighborsClassifier` on the 94 encoded columns from Task 2.4.
@@ -779,7 +820,7 @@ To classify a mushroom, KNN:
 All 94 columns are used here on purpose: this result is the reference that
 feature selection will be compared against.
 
-### Choosing k
+#### Choosing k
 
 k was chosen **without using the test set**, by leave-one-out on the training
 rows: for each k, every one of the 123 training mushrooms is predicted from the
@@ -799,7 +840,7 @@ macro F1 falls as k grows: with more neighbours voting, the big families
 less often. k = 7 has a slightly higher accuracy, but only by getting more of
 the big families right. The dashed line is always predicting Tricholoma (24.4%).
 
-### Results
+#### Results
 
 | Data | Mushrooms | Correctly classified | Accuracy |
 |---|---:|---:|---:|
@@ -816,7 +857,7 @@ leave-one-out (when their only mushroom is left out, no example remains), and
 partly because a 50-mushroom test set is small: one mushroom is 2 percentage
 points.
 
-### Comparison with the disorder tree
+#### Comparison with the disorder tree
 
 | Model | Test accuracy | Test macro F1 |
 |---|---:|---:|
@@ -830,7 +871,7 @@ cell value (e.g. a whole `gill-color` combination) was seen in training. KNN
 compares codes one by one, so a mushroom with an unseen combination can still
 be close to training mushrooms that share most of its codes.
 
-### Clear versus tied votes
+#### Clear versus tied votes
 
 | Vote among the 3 neighbours | Test mushrooms | Correct | Accuracy |
 |---|---:|---:|---:|
@@ -850,7 +891,7 @@ The full k table, per-family test scores and individual predictions are in
 [`2.5_knn_summary.md`](<task 2 classification/knn/2.5_knn_summary.md>) and
 [`2.5_test_predictions.csv`](<task 2 classification/knn/2.5_test_predictions.csv>).
 
-# Task 3 — Ensemble classifiers
+## Task 3 — Ensemble classifiers
 
 An ensemble combines many decision trees into one model. Two ensembles were
 trained, one of each kind:
@@ -867,7 +908,7 @@ mushrooms used once at the end. Both use scikit-learn with a fixed random seed
 (42), so every run gives the same result. Shared code (loading, leave-one-out
 tuning, tables, importance plot) is in `task 3 ensembles/ensemble_common.py`.
 
-## Task 3.1 — Random forest
+### 3.1 — Random forest
 
 The script `task 3 ensembles/random forest/3.1_random_forest.py` builds a forest
 of **300 decision trees**:
@@ -883,7 +924,7 @@ of **300 decision trees**:
 3. To classify a mushroom, every tree gives its probability for each family,
    the forest averages them and predicts the family with the highest average.
 
-### Choosing the settings
+#### Choosing the settings
 
 Four versions were tried, each scored on the training mushrooms by
 leave-one-out (each training mushroom is hidden, the forest is trained on the
@@ -905,7 +946,7 @@ small families cost more (0.158 → 0.187 and 0.165 → 0.225). That setting mak
 the trees try harder on the small families instead of mostly learning
 Tricholoma and Russula. The last version has the best macro F1 and was chosen.
 
-### Results
+#### Results
 
 | Data | Mushrooms | Correctly classified | Accuracy |
 |---|---:|---:|---:|
@@ -925,7 +966,7 @@ so each mushroom can be guessed using only the trees that did not see it. This
 gives a second training-only estimate for free: **49.6% accuracy, macro F1
 0.225**, the same as leave-one-out.
 
-### Which columns the forest used most
+#### Which columns the forest used most
 
 ![Random forest feature importance](<task 3 ensembles/random forest/3.1_feature_importance.png>)
 
@@ -942,7 +983,7 @@ Full tables are in
 [`3.1_random_forest_summary.md`](<task 3 ensembles/random forest/3.1_random_forest_summary.md>)
 and [`3.1_test_predictions.csv`](<task 3 ensembles/random forest/3.1_test_predictions.csv>).
 
-## Task 3.2 — Gradient boosting
+### 3.2 — Gradient boosting
 
 The script `task 3 ensembles/gradient boosting/3.2_gradient_boosting.py` uses
 scikit-learn's `GradientBoostingClassifier`:
@@ -961,7 +1002,7 @@ fix what the previous ones still get wrong. Each round also uses a random 80%
 of the training mushrooms (`subsample = 0.8`), which adds some randomness and
 makes overfitting slower.
 
-### Choosing the settings
+#### Choosing the settings
 
 | Rounds | Questions per small tree (depth) | Correct (out of 123) | Accuracy | Macro F1 |
 |---:|---:|---:|---:|---:|
@@ -978,7 +1019,7 @@ only 0.002, which is far less than a single mushroom changes; in practice they
 are equally good. Only the largest version (200 rounds, depth 3) is clearly
 worse, which is a sign of overfitting.
 
-### Results
+#### Results
 
 | Data | Mushrooms | Correctly classified | Accuracy |
 |---|---:|---:|---:|
@@ -988,7 +1029,7 @@ worse, which is a sign of overfitting.
 
 Test macro F1: **0.277**.
 
-### Which columns gradient boosting used most
+#### Which columns gradient boosting used most
 
 ![Gradient boosting feature importance](<task 3 ensembles/gradient boosting/3.2_feature_importance.png>)
 
@@ -1004,7 +1045,7 @@ Full tables are in
 [`3.2_gradient_boosting_summary.md`](<task 3 ensembles/gradient boosting/3.2_gradient_boosting_summary.md>)
 and [`3.2_test_predictions.csv`](<task 3 ensembles/gradient boosting/3.2_test_predictions.csv>).
 
-## Task 3 — Comparison with the Task 2 models
+### 3.3 — Comparison with the Task 2 models
 
 All models were evaluated on the same 50 test mushrooms:
 
@@ -1033,7 +1074,7 @@ All models were evaluated on the same 50 test mushrooms:
   is within chance. The gap between the random forest and the rest (6 or more
   mushrooms) is larger. Task 4 will compare all models with more metrics.
 
-# Task 4 — Performance of all models
+## Task 4 — Performance of all models
 
 The script `task 4 evaluation/4.1_model_comparison.py` compares every model from
 Tasks 2 and 3 on the **same 50 test mushrooms**. It reads each model's saved
@@ -1043,7 +1084,7 @@ common training family) is included as the reference every model must beat.
 All tables are also in
 [`4.1_model_comparison_summary.md`](<task 4 evaluation/4.1_model_comparison_summary.md>).
 
-## 4.1 Which metrics, and why
+### 4.1 — Which metrics, and why
 
 The data is very unbalanced: the 50 test mushrooms include 13 Tricholoma and
 8 Russula, while 6 families have a single test mushroom. A good metric must
@@ -1064,7 +1105,7 @@ here. ROC-AUC was not used: it needs a probability for every family, and with
 1–2 test mushrooms for most families its per-family values would be
 meaningless.
 
-## 4.2 Results
+### 4.2 — Results
 
 | Model | Correct | Accuracy | Balanced accuracy | Macro F1 | Weighted F1 | MCC |
 |---|---:|---:|---:|---:|---:|---:|
@@ -1086,7 +1127,7 @@ meaningless.
 - **Weighted F1 versus macro F1** shows the same thing for every model: the gap
   is 0.20 for gradient boosting, 0.11 for KNN and 0.10 for the random forest.
 
-### Training versus unseen mushrooms (overfitting)
+#### Training versus unseen mushrooms (overfitting)
 
 From the results tables of Tasks 2.3–3.2:
 
@@ -1102,7 +1143,7 @@ and about 30–66% on unseen ones. The random forest overfits as much as the
 others on its own training mushrooms, but averaging 300 different trees still
 gives the best result on unseen mushrooms.
 
-## 4.3 How certain are these differences?
+### 4.3 — How certain are these differences?
 
 With 50 test mushrooms, one mushroom changes accuracy by 2 percentage points,
 so some differences could be luck. To measure this, the 50 test mushrooms were
@@ -1135,7 +1176,7 @@ macro F1) gradient boosting. Against KNN it is better on this test set, but
 the difference is not large enough to rule out luck with only 50 test
 mushrooms.
 
-## 4.4 Which families are recognised?
+### 4.4 — Which families are recognised?
 
 Test mushrooms found per family (found / test mushrooms of that family):
 
@@ -1189,7 +1230,7 @@ the forest is unsure, it falls back to the biggest family, which has the most
 training examples and therefore wins many tree votes. Two small families
 (Oyster Mushroom, Paxillus) are predicted as Russula, the second-biggest family.
 
-## 4.5 Errors by rarity tier
+### 4.5 — Errors by rarity tier
 
 The story asks whether valuable (Legendary) mushrooms are classified as well
 as common ones. Using the tiers from Step 1.10:
@@ -1207,7 +1248,7 @@ better on less typical mushrooms, but 9 mushrooms is too few for a firm
 conclusion. The models predict the family, not the tier, so a mistake here
 means "wrong family", not "Legendary sold as Common".
 
-## 4.6 Conclusions
+### 4.6 — Conclusions
 
 **Per model**
 
@@ -1248,7 +1289,7 @@ families with fewer than 5 mushrooms into one "Other" class, feature selection
 to remove columns that only add noise, and distance-weighted voting in KNN to
 avoid alphabetical tie-breaks.
 
-# Task 5 — Clustering with K-Means
+## Task 5 — Clustering with K-Means
 
 **Held-out column: `family`.** K-Means is run without the family label, and
 the clusters are compared with the families afterwards, to see whether the
@@ -1269,7 +1310,7 @@ as follows:
 The result depends on the starting centres, so it is run 10 times from
 different starts and the best run is kept (fixed random seed 42).
 
-## 5.1 Number of clusters = number of families
+### 5.1 — Number of clusters = number of families
 
 Many families have only one or a few mushrooms (see the family table in Step
 1.4), and a cluster cannot meaningfully represent a family of one. So K-Means
@@ -1294,7 +1335,7 @@ Two simple scores measure how well the clusters match the families:
   are in the same cluster (its most common one), averaged over the families.
   1.0 means no family is split over several clusters.
 
-## 5.2 Results
+### 5.2 — Results
 
 | Families included | k | Mushrooms | Purity | Purity if all in one cluster | Family togetherness | Families that are the largest family of some cluster |
 |---|---:|---:|---:|---:|---:|---|
@@ -1418,7 +1459,7 @@ over 16 clusters and Russula over 8. The full family-by-cluster tables of all
 four runs are in
 [`5.1_kmeans_by_family_size_summary.md`](<task 5 clustering/5.1_kmeans_by_family_size_summary.md>).
 
-## 5.3 What the clusters show
+### 5.3 — What the clusters show
 
 - **Clusters match families only partly.** Purity stays around 0.5 in every
   run: about half of the mushrooms are in a cluster dominated by another
@@ -1439,7 +1480,7 @@ four runs are in
   split (a family of one mushroom is always "together"), so they raise the
   average. The large families are not more together than in run 1.
 
-# Task 6 — Clustering versus classification
+## Task 6 — Clustering versus classification
 
 The script `task 6 conclusions/6.1_clustering_vs_classification.py` puts the
 Task 4 and Task 5 results side by side. It uses the k = 23 clustering run (all
@@ -1448,7 +1489,7 @@ classifier (random forest) and of KNN; nothing is retrained. Each cluster's
 **cluster family** is its largest family. Full tables are in
 [`6.1_comparison_summary.md`](<task 6 conclusions/6.1_comparison_summary.md>).
 
-## 6.1 Per family
+### 6.1 — Per family
 
 For each family with test mushrooms: how many test mushrooms the classifiers
 found, and how well the family stays together in the clusters.
@@ -1473,7 +1514,7 @@ found, and how well the family stays together in the clusters.
 | Oyster Mushroom | 2 | 0/1 | 0/1 | 2 | 50% | no (Tricholoma) |
 | Pluteus | 2 | 1/1 | 0/1 | 1 | 100% | no (Tricholoma) |
 
-## 6.2 Per test mushroom
+### 6.2 — Per test mushroom
 
 For each of the 50 test mushrooms, the random forest's prediction is compared
 with the cluster family of the cluster the mushroom fell into:
@@ -1493,7 +1534,7 @@ with the cluster family of the cluster the mushroom fell into:
   Egg Yolk Fungus (cluster of Bolbitius), Field Blewit (cluster of
   Tricholoma) and Birch Russula (cluster of Russula).
 
-## 6.3 Where they agree and disagree
+### 6.3 — Where they agree and disagree
 
 | Pattern | Families | Reading |
 |---|---|---|
@@ -1507,7 +1548,7 @@ Both use the same Euclidean distance over all 94 columns, so they share the
 same view of which mushrooms are similar. The random forest instead learns,
 from the labels, which columns separate the families.
 
-## 6.4 What each approach reveals that the other misses
+### 6.4 — What each approach reveals that the other misses
 
 **Classification reveals:**
 
@@ -1535,7 +1576,7 @@ from the labels, which columns separate the families.
   clearly belong to a tight group of their own family (Ink Cap), which the
   forest overrides with the most common family.
 
-## 6.5 Overall conclusions
+### 6.5 — Overall conclusions
 
 1. **Family can be predicted only partly from these features.** The best
    model (random forest) classifies 66% of test mushrooms correctly, against
