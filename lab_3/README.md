@@ -205,6 +205,36 @@ and Russula has 27, while six families have only one mushroom each. This
 imbalance will matter when choosing and evaluating family classifiers. The
 [family count table](<task 1 eda/plots/1.4_02_family_distribution.md>) lists all 23 counts.
 
+| Family | Mushrooms | Share of 173 |
+|---|---:|---:|
+| Tricholoma Family | 43 | 24.9% |
+| Russula Family | 27 | 15.6% |
+| Bolete Family | 14 | 8.1% |
+| Ink Cap Family | 13 | 7.5% |
+| Cortinarius Family | 11 | 6.4% |
+| Amanita Family | 8 | 4.6% |
+| Wax Gill Family | 8 | 4.6% |
+| Stropharia Family | 8 | 4.6% |
+| Entoloma Family | 7 | 4.0% |
+| Bracket Fungi | 7 | 4.0% |
+| Mushroom Family | 5 | 2.9% |
+| Lepiota Family | 3 | 1.7% |
+| Bolbitius Family | 3 | 1.7% |
+| Paxillus Family | 3 | 1.7% |
+| Chanterelle Family | 3 | 1.7% |
+| Pluteus Family | 2 | 1.2% |
+| Oyster Mushroom Family | 2 | 1.2% |
+| Crepidotus Family | 1 | 0.6% |
+| Hydnum Family | 1 | 0.6% |
+| Ear-Pick Family | 1 | 0.6% |
+| Saddle-Cup Family | 1 | 0.6% |
+| Morel Family | 1 | 0.6% |
+| Jelly Discs Family | 1 | 0.6% |
+| **Total (23 families)** | **173** | **100%** |
+
+The two largest families hold 40.5% of all mushrooms, while the 12 smallest
+families (3 or fewer mushrooms each) hold 22 mushrooms together (12.7%).
+
 ### Class distribution
 
 ![Mushroom counts by class code](<task 1 eda/plots/1.4_03_class_distribution.png>)
