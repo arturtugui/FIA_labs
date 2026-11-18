@@ -618,3 +618,87 @@ for it, so the tree stops and guesses the most common family at that node.
 Per-family scores and individual predictions are in
 [`2.3_tree_summary.md`](<task 2 classification/decision tree/2.3_tree_summary.md>)
 and [`2.3_test_predictions.csv`](<task 2 classification/decision tree/2.3_test_predictions.csv>).
+
+## Task 2.4 — Encoding and scaling (models like numbers, same scale)
+
+KNN (and later K-Means) compares mushrooms by distance, and a distance can
+only be computed between numbers. The disorder tree (Task 2.3) uses the
+categories directly, so it does not need this step. The script
+`task 2 classification/2.4_encoding_scaling.py` reads the Task 2.2 prepared
+files and writes [`2.4_train_encoded.csv`](processed_data/2.4_train_encoded.csv)
+and [`2.4_test_encoded.csv`](processed_data/2.4_test_encoded.csv). As in Task
+2.2, everything is learned from the 123 training rows and then applied to the
+50 test rows. Details are in
+[`2.4_encoding_summary.md`](<task 2 classification/2.4_encoding_summary.md>).
+
+### Categorical columns → dummy columns
+
+Each code becomes its own 0/1 column, named `column=code`. A cell that lists
+several codes gets a 1 in each of them, so `cap-shape = [f, x]` gives
+`cap-shape=f = 1` and `cap-shape=x = 1`. This also keeps the overlap between
+`[f, x]` and `[x]`: both have a 1 in `cap-shape=x`.
+
+- The list of codes comes from the training rows. One `stem-color` code that
+  appears only in a test mushroom has no column and is ignored.
+- `does-bruise-or-bleed` and `has-ring` only take the values `[f]` and `[t]`,
+  so only the `=t` column is kept. The `=f` column would always be its exact
+  opposite and would count the same information twice in a distance.
+- LabelEncoder / OrdinalEncoder were not used: numbering colours 1, 2, 3 would
+  make the model think colour 2 lies between colours 1 and 3.
+
+**Why not frequency encoding.** Frequency encoding replaces each value by how
+often it occurs. In the training rows, many different values occur equally
+often and would get the same number:
+
+| Column | Different values | Different numbers after frequency encoding | Values that would all become 1/123 |
+|---|---:|---:|---:|
+| cap-color | 44 | 9 | 27 |
+| gill-color | 41 | 10 | 23 |
+| cap-surface | 34 | 8 | 17 |
+| cap-shape | 23 | 9 | 8 |
+
+For example, `cap-color = [e, o]` and `[g, w]` would become the same number,
+so the model could not tell them apart. The distance would also measure how
+*common* a value is rather than how *similar* two mushrooms are. Frequency
+encoding is useful when a column has thousands of categories; here dummy
+columns give a manageable number of columns.
+
+### Removing duplicate columns
+
+Following the course step "remove duplicates", the new columns were checked:
+
+| Dropped column | Identical to (kept) | Mushrooms with a 1 |
+|---|---|---|
+| `gill-spacing=f` | `gill-attachment=f` | 7 train, 3 test |
+| `gill-color=f` | `gill-attachment=f` | 7 train, 3 test |
+| `stem-color=f` | `stem-surface=f` | 2 train, 1 test |
+
+These are mushrooms without gills (e.g. Horn of Plenty, Common Morel,
+Chanterelle) or without a stem (Soft Slipper Toadstool, Silver Leaf Fungus,
+Hairy Stereum). They have `[f]` in every gill or stem column, so `f` probably
+means "none". Keeping all three gill columns would count "no gills" three
+times in every distance. No column was constant.
+
+### Numeric columns → same scale
+
+| Column | Training range (after 2.2 capping) | Scaled training range | Scaled test range |
+|---|---|---|---|
+| cap-diameter-midpoint | 0.7 – 19.0 | 0 – 1 | 0.000 – 0.883 |
+| stem-height-midpoint | 0 – 18.67 | 0 – 1 | 0.000 – 0.848 |
+| stem-width-midpoint | 0 – 47.8 | 0 – 1 | 0.000 – 0.883 |
+
+Each midpoint is first transformed with `log1p(x) = log(1 + x)`, which
+compresses large sizes so a difference between small mushrooms (2 vs 4) counts
+more than the same difference between large ones (40 vs 42). It is then
+MinMax-scaled to 0–1 with the training minimum and maximum, the same range as
+the dummy columns. Without scaling, stem width (up to 47.8) would outweigh
+every 0/1 column in a distance. The dummy columns are not scaled: they are
+already 0/1, and standardising them would turn rare codes into large values.
+
+### Result
+
+**94 feature columns**: 91 dummy columns + 3 scaled numeric columns, for 123
+training and 50 test mushrooms. Because 91 of the 94 columns are categorical,
+the categorical features will have much more influence on KNN distances than
+the three size measurements. This follows from the data, not from an error,
+and is relevant when interpreting KNN results.
