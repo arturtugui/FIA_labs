@@ -702,3 +702,91 @@ training and 50 test mushrooms. Because 91 of the 94 columns are categorical,
 the categorical features will have much more influence on KNN distances than
 the three size measurements. This follows from the data, not from an error,
 and is relevant when interpreting KNN results.
+
+## Task 2.5 — K-Nearest Neighbours on all 94 features
+
+The script `task 2 classification/knn/2.5_knn_all_features.py` uses
+scikit-learn's `KNeighborsClassifier` on the 94 encoded columns from Task 2.4.
+To classify a mushroom, KNN:
+
+1. computes its **Euclidean distance** to every training mushroom. On the 0/1
+   dummy columns, the squared distance is simply the number of codes on which
+   the two mushrooms disagree; each scaled size column adds at most 1;
+2. takes the **k training mushrooms with the smallest distance**;
+3. predicts the family that occurs **most often among those k**. If two or more
+   families have the same number of votes, scikit-learn picks the
+   alphabetically first one.
+
+All 94 columns are used here on purpose: this result is the reference that
+feature selection will be compared against.
+
+### Choosing k
+
+k was chosen **without using the test set**, by leave-one-out on the training
+rows: for each k, every one of the 123 training mushrooms is predicted from the
+other 122. The k with the highest macro F1 was chosen, because macro F1 counts
+every family equally and the families are very unequal in size.
+
+![KNN leave-one-out scores for each k](<task 2 classification/knn/2.5_k_selection.png>)
+
+| k | 1 | **3** | 5 | 7 | 9 | 11 | 13 | 15 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Leave-one-out accuracy | 42.3% | **44.7%** | 43.1% | 46.3% | 44.7% | 43.1% | 44.7% | 43.9% |
+| Leave-one-out macro F1 | 0.179 | **0.233** | 0.181 | 0.174 | 0.167 | 0.151 | 0.155 | 0.146 |
+
+**k = 3** has the best macro F1. Accuracy barely changes with k (42–46%), but
+macro F1 falls as k grows: with more neighbours voting, the big families
+(Tricholoma, Russula) win more votes and the small families are predicted
+less often. k = 7 has a slightly higher accuracy, but only by getting more of
+the big families right. The dashed line is always predicting Tricholoma (24.4%).
+
+### Results
+
+| Data | Mushrooms | Correctly classified | Accuracy |
+|---|---:|---:|---:|
+| Training, each mushroom predicted from the other 122 (leave-one-out) | 123 | 55 | **44.7%** |
+| Training, mushroom itself included among its neighbours | 123 | 80 | 65.0% |
+| Test (never seen) | 50 | 27 | **54.0%** |
+
+The second row is shown only to compare with the tree's 100% training score:
+when a training mushroom is predicted, it is its own nearest neighbour
+(distance 0), so it always gets one vote for its own family. The leave-one-out
+row is the honest training estimate. It is lower than the test score partly
+because the six single-mushroom families can never be predicted correctly in
+leave-one-out (when their only mushroom is left out, no example remains), and
+partly because a 50-mushroom test set is small: one mushroom is 2 percentage
+points.
+
+### Comparison with the disorder tree
+
+| Model | Test accuracy | Test macro F1 |
+|---|---:|---:|
+| Always predict Tricholoma | 26.0% (13/50) | 0.024 |
+| Disorder tree (Task 2.3) | 30.0% (15/50) | 0.190 |
+| **KNN, k = 3, all 94 features** | **54.0% (27/50)** | **0.396** |
+
+KNN classifies 12 more test mushrooms correctly than the tree, and its macro F1
+is about twice as high. The tree only matches a test mushroom when its exact
+cell value (e.g. a whole `gill-color` combination) was seen in training. KNN
+compares codes one by one, so a mushroom with an unseen combination can still
+be close to training mushrooms that share most of its codes.
+
+### Clear versus tied votes
+
+| Vote among the 3 neighbours | Test mushrooms | Correct | Accuracy |
+|---|---:|---:|---:|
+| Clear majority (at least 2 of 3 agree) | 26 | 20 | 76.9% |
+| Tied (3 different families, decided alphabetically) | 24 | 7 | 29.2% |
+
+Almost half of the test predictions are ties. For example, the nearest
+neighbours of The Blusher (Amanita) are False Panther Cap (Amanita, distance
+2.238), Shaggy Parasol (Lepiota, 2.650) and Bare-toothed Russula (Russula,
+2.834). Each family has one vote, so the alphabetically first family, Amanita,
+is predicted: correct here, but by luck of the alphabet. When the neighbours
+agree, KNN is right about three times out of four; when they do not, the
+result is close to a guess. A better tie rule (for example, giving closer
+neighbours a larger vote) could change those 24 predictions.
+
+The full k table, per-family test scores and individual predictions are in
+[`2.5_knn_summary.md`](<task 2 classification/knn/2.5_knn_summary.md>) and
+[`2.5_test_predictions.csv`](<task 2 classification/knn/2.5_test_predictions.csv>).

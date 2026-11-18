@@ -1,0 +1,51 @@
+﻿name,actual_family,predicted_family,correct
+The Blusher,Amanita Family,Amanita Family,True
+Death Cap,Amanita Family,Amanita Family,True
+Stinking Parasol,Lepiota Family,Amanita Family,False
+Amethyst Deceiver,Tricholoma Family,Russula Family,False
+Wood Blewit,Tricholoma Family,Tricholoma Family,True
+Field Blewit,Tricholoma Family,Entoloma Family,False
+Club-footed Funnel Cap,Tricholoma Family,Tricholoma Family,True
+Aniseed Funnel Cap,Tricholoma Family,Cortinarius Family,False
+Fairy Ring Champignon,Tricholoma Family,Entoloma Family,False
+Little Wheel Fungus,Tricholoma Family,Tricholoma Family,True
+Tufted Bell Cap,Tricholoma Family,Bolete Family,False
+Orange Bell Cap,Tricholoma Family,Bolete Family,False
+Honey Fungus,Tricholoma Family,Tricholoma Family,True
+Bulbous Honey Fungus,Tricholoma Family,Amanita Family,False
+Soap-scented Tricholoma,Tricholoma Family,Cortinarius Family,False
+Changeable Melanoleuca,Tricholoma Family,Tricholoma Family,True
+Parrot Wax Cap,Wax Gill Family,Bolete Family,False
+Herald of Winter,Wax Gill Family,Cortinarius Family,False
+Yellow Swamp Russula,Russula Family,Bolete Family,False
+Stinking Russula,Russula Family,Amanita Family,False
+Birch Russula,Russula Family,Russula Family,True
+The Charcoal Burner,Russula Family,Russula Family,True
+Blackish Purple Russula,Russula Family,Russula Family,True
+Crab-scented Russula,Russula Family,Russula Family,True
+Peppery Milk Cap,Russula Family,Entoloma Family,False
+Coconut-scented Milk Cap,Russula Family,Russula Family,True
+Fawn Pluteus,Pluteus Family,Amanita Family,False
+White Leptonia,Entoloma Family,Entoloma Family,True
+Blue Leptonia,Entoloma Family,Entoloma Family,True
+Egg Yolk Fungus,Bolbitius Family,Ink Cap Family,False
+Shaggy Pholiota,Stropharia Family,Bolete Family,False
+Charcoal Pholiota,Stropharia Family,Cortinarius Family,False
+Blood-red Cortinarius,Cortinarius Family,Cortinarius Family,True
+Dark-centred Hebeloma,Cortinarius Family,Ink Cap Family,False
+Rusty Wood Rotter,Cortinarius Family,Bolete Family,False
+Field Mushroom,Mushroom Family,Mushroom Family,True
+Horse Mushroom,Mushroom Family,Mushroom Family,True
+Fairies' Bonnets,Ink Cap Family,Tricholoma Family,False
+Fairy Parasol,Ink Cap Family,Ink Cap Family,True
+Hay Cap,Ink Cap Family,Ink Cap Family,True
+Petticoat Fungus,Ink Cap Family,Ink Cap Family,True
+Red-cracked Bolete,Bolete Family,Bolete Family,True
+Dotted-stemmed Bolete,Bolete Family,Bolete Family,True
+Peppery Bolete,Bolete Family,Bolete Family,True
+Brown Birch Bolete,Bolete Family,Bolete Family,True
+False Chanterelle,Paxillus Family,Bolete Family,False
+Chanterelle,Chanterelle Family,Chanterelle Family,True
+Branched Oyster Mushroom,Oyster Mushroom Family,Bolete Family,False
+Hairy Stereum,Bracket Fungi,Bracket Fungi,True
+Turban Fungus,Bracket Fungi,Bracket Fungi,True
