@@ -1,0 +1,6 @@
+Model,Correct,Accuracy,Balanced accuracy,Macro F1,Weighted F1,MCC
+Always Tricholoma,13/50,0.26,0.059,0.024,0.107,0.0
+Disorder tree,15/50,0.3,0.242,0.19,0.256,0.179
+KNN (k = 3),27/50,0.54,0.476,0.396,0.502,0.509
+Random forest,33/50,0.66,0.525,0.494,0.59,0.613
+Gradient boosting,26/50,0.52,0.31,0.277,0.477,0.446
