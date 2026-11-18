@@ -460,3 +460,23 @@ the train/test split. It writes
 
 The rarity tiers from Step 1.10 were computed on the raw catalogue and are not
 recomputed from this cleaned file.
+
+
+## Task 2.1 — Family-stratified train/test split
+
+The script `task 2 classification/2.1_family_stratified_split.py` splits the
+Step 1.11 cleaned file into an approximately 70/30 holdout with random seed 42.
+Each family with at least two mushrooms appears in both sets; singleton
+families stay in train so the model can see those labels. The resulting split
+has **123 training rows (71.1%)** and **50 test rows (28.9%)**. Train contains
+all 23 families; test contains 17 because the six singleton-family rows cannot
+appear in both sets. Since the rows and their order did not change during
+cleaning, the split contains the same mushrooms as the earlier raw-data split.
+
+This means the test set cannot evaluate how well the model generalizes to
+those six singleton families. Blanks are still blank in these files. The
+family-by-family counts are in
+[`2.1_split_summary.md`](<task 2 classification/2.1_split_summary.md>), and
+the split files are [`2.1_train.csv`](processed_data/2.1_train.csv) and
+[`2.1_test.csv`](processed_data/2.1_test.csv). This is one fixed holdout, not
+a repeated cross-validation result.
