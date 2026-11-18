@@ -1,0 +1,163 @@
+What is gill-color?  [n=123, D=3.722, average D after question=1.500]
+├── [b, n, w] → Russula Family (n=1)
+├── [b, o] → Wax Gill Family (n=1)
+├── [b, p, w] → Russula Family (n=1)
+├── [b] → Hydnum Family (n=1)
+├── [e, n, y]:
+│   What is cap-shape?  [n=2, D=1.000, average D after question=0.000]
+│   ├── [f] → Tricholoma Family (n=1)
+│   └── [x] → Bolete Family (n=1)
+├── [e, o]:
+│   What is cap-surface?  [n=2, D=1.000, average D after question=0.000]
+│   ├── [d, h, s] → Wax Gill Family (n=1)
+│   └── [e] → Bolete Family (n=1)
+├── [f]:
+│   What is cap-color?  [n=7, D=2.236, average D after question=0.000]
+│   ├── [g, k] → Bracket Fungi (n=1)
+│   ├── [g, n] → Morel Family (n=1)
+│   ├── [g] → Bracket Fungi (n=1)
+│   ├── [n, y] → Chanterelle Family (n=1)
+│   ├── [n] → Chanterelle Family (n=1)
+│   ├── [w] → Saddle-Cup Family (n=1)
+│   └── [y] → Jelly Discs Family (n=1)
+├── [g, k, w] → Ink Cap Family (n=1)
+├── [g, k, y] → Wax Gill Family (n=1)
+├── [g, k] → Stropharia Family (n=1)
+├── [g, n, p, w] → Mushroom Family (n=1)
+├── [g, n, u, w] → Ink Cap Family (n=1)
+├── [g, n, u] → Stropharia Family (n=1)
+├── [g, n, w, y] → Stropharia Family (n=1)
+├── [g, n]:
+│   What is cap-shape?  [n=2, D=1.000, average D after question=0.000]
+│   ├── [p] → Stropharia Family (n=1)
+│   └── [x] → Cortinarius Family (n=1)
+├── [g, r, w] → Russula Family (n=1)
+├── [g, u, w] → Ink Cap Family (n=1)
+├── [g, u] → Tricholoma Family (n=1)
+├── [g, w, y] → Tricholoma Family (n=1)
+├── [g, w]:
+│   What is cap-shape?  [n=3, D=0.918, average D after question=0.000]
+│   ├── [b, f] → Tricholoma Family (n=1)
+│   ├── [c] → Tricholoma Family (n=1)
+│   └── [s] → Russula Family (n=1)
+├── [g] → Tricholoma Family (n=2)
+├── [k, n] → Ink Cap Family (n=4)
+├── [k, p, w] → Ink Cap Family (n=1)
+├── [k, p] → Ink Cap Family (n=1)
+├── [k, r, y] → Stropharia Family (n=1)
+├── [k, y] → Russula Family (n=1)
+├── [n, p]:
+│   What is cap-shape?  [n=2, D=1.000, average D after question=0.000]
+│   ├── [f, x] → Mushroom Family (n=1)
+│   └── [x] → Tricholoma Family (n=1)
+├── [n, r] → Cortinarius Family (n=1)
+├── [n, u] → Cortinarius Family (n=1)
+├── [n, w]:
+│   What is cap-color?  [n=6, D=2.252, average D after question=0.000]
+│   ├── [e, n, o] → Bolete Family (n=1)
+│   ├── [e, n] → Russula Family (n=1)
+│   ├── [n, w] → Bolbitius Family (n=1)
+│   ├── [n] → Stropharia Family (n=1)
+│   ├── [u, w] → Cortinarius Family (n=1)
+│   └── [w] → Russula Family (n=1)
+├── [n, y]:
+│   What is cap-surface?  [n=4, D=1.500, average D after question=0.000]
+│   ├── [g, h, s, t] → Tricholoma Family (n=1)
+│   ├── [h, s, t] → Bolete Family (n=1)
+│   ├── [w] → Russula Family (n=1)
+│   └── [y] → Russula Family (n=1)
+├── [n]:
+│   What is cap-surface?  [n=8, D=2.500, average D after question=0.500]
+│   ├── [e, i] → Cortinarius Family (n=1)
+│   ├── [g]:
+│   │   What is cap-shape?  [n=2, D=1.000, average D after question=0.000]
+│   │   ├── [b] → Bolbitius Family (n=1)
+│   │   └── [x] → Tricholoma Family (n=1)
+│   ├── [h, t] → Tricholoma Family (n=1)
+│   ├── [h] → Cortinarius Family (n=1)
+│   ├── [k]:
+│   │   What is cap-shape?  [n=2, D=1.000, average D after question=0.000]
+│   │   ├── [f, s] → Bracket Fungi (n=1)
+│   │   └── [o, x] → Ear-Pick Family (n=1)
+│   └── [t] → Paxillus Family (n=1)
+├── [o, y]:
+│   What is cap-surface?  [n=4, D=2.000, average D after question=0.000]
+│   ├── [d, e, i, y] → Cortinarius Family (n=1)
+│   ├── [e, k, t] → Tricholoma Family (n=1)
+│   ├── [s, y] → Wax Gill Family (n=1)
+│   └── [y] → Russula Family (n=1)
+├── [o]:
+│   What is cap-shape?  [n=3, D=0.918, average D after question=0.000]
+│   ├── [f, x] → Tricholoma Family (n=1)
+│   └── [s] → Russula Family (n=2)
+├── [p, r, y] → Cortinarius Family (n=1)
+├── [p, w]:
+│   What is cap-shape?  [n=4, D=2.000, average D after question=0.000]
+│   ├── [c, f, x] → Tricholoma Family (n=1)
+│   ├── [p, x] → Bolete Family (n=1)
+│   ├── [s, x] → Entoloma Family (n=1)
+│   └── [x] → Pluteus Family (n=1)
+├── [p, y] → Entoloma Family (n=1)
+├── [p]:
+│   What is cap-surface?  [n=7, D=1.842, average D after question=0.286]
+│   ├── [i, y] → Mushroom Family (n=1)
+│   ├── [k] → Entoloma Family (n=1)
+│   ├── [t]:
+│   │   What is cap-shape?  [n=2, D=1.000, average D after question=0.000]
+│   │   ├── [b, f] → Entoloma Family (n=1)
+│   │   └── [s] → Russula Family (n=1)
+│   ├── [w] → Entoloma Family (n=1)
+│   └── [y] → Tricholoma Family (n=2)
+├── [w, y]:
+│   What is cap-color?  [n=5, D=1.922, average D after question=0.000]
+│   ├── [b, g, l, w] → Oyster Mushroom Family (n=1)
+│   ├── [b, n] → Tricholoma Family (n=1)
+│   ├── [e, n] → Russula Family (n=1)
+│   ├── [n, o] → Tricholoma Family (n=1)
+│   └── [n] → Bolete Family (n=1)
+├── [w]:
+│   What is cap-color?  [n=24, D=2.138, average D after question=0.761]
+│   ├── [b, n] → Tricholoma Family (n=1)
+│   ├── [e, n, p] → Russula Family (n=1)
+│   ├── [e, n] → Tricholoma Family (n=1)
+│   ├── [e, o] → Amanita Family (n=1)
+│   ├── [e] → Russula Family (n=1)
+│   ├── [g, n]:
+│   │   What is cap-shape?  [n=3, D=0.918, average D after question=0.000]
+│   │   ├── [f, s, x] → Tricholoma Family (n=1)
+│   │   ├── [f, x] → Amanita Family (n=1)
+│   │   └── [p, x] → Tricholoma Family (n=1)
+│   ├── [g, w] → Tricholoma Family (n=1)
+│   ├── [n, w]:
+│   │   What is cap-shape?  [n=3, D=1.585, average D after question=0.000]
+│   │   ├── [f, p] → Lepiota Family (n=1)
+│   │   ├── [f, x] → Tricholoma Family (n=1)
+│   │   └── [o] → Crepidotus Family (n=1)
+│   ├── [n, y] → Tricholoma Family (n=2)
+│   ├── [n]:
+│   │   What is cap-shape?  [n=4, D=1.500, average D after question=0.000]
+│   │   ├── [c, x] → Amanita Family (n=1)
+│   │   ├── [p, x] → Amanita Family (n=1)
+│   │   ├── [s] → Tricholoma Family (n=1)
+│   │   └── [x] → Lepiota Family (n=1)
+│   ├── [u] → Russula Family (n=1)
+│   ├── [w, y] → Amanita Family (n=1)
+│   ├── [w]:
+│   │   What is cap-surface?  [n=3, D=1.585, average D after question=0.000]
+│   │   ├── [d, s] → Tricholoma Family (n=1)
+│   │   ├── [s] → Wax Gill Family (n=1)
+│   │   └── [t] → Amanita Family (n=1)
+│   └── [y] → Russula Family (n=1)
+└── [y]:
+    What is cap-surface?  [n=11, D=2.369, average D after question=0.250]
+    ├── [d, g, s] → Bracket Fungi (n=1)
+    ├── [d, k, s] → Paxillus Family (n=1)
+    ├── [d] → Bolete Family (n=1)
+    ├── [h, s, t] → Wax Gill Family (n=1)
+    ├── [h, t] → Bolete Family (n=3)
+    ├── [t] → Russula Family (n=1)
+    └── [y]:
+        What is cap-shape?  [n=3, D=0.918, average D after question=0.000]
+        ├── [f, x] → Tricholoma Family (n=1)
+        ├── [f] → Tricholoma Family (n=1)
+        └── [o] → Bracket Fungi (n=1)

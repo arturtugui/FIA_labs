@@ -526,3 +526,95 @@ needed: the minimum values are 0 (stem-less fungi), which are real.
 | stem-width-midpoint | 47.8 | Cep 70 → 47.8, Horn of Plenty 50 → 47.8 |
 
 All five capped values are in the training set; no test value exceeded a cap.
+
+## Task 2.3 — Multi-way decision tree using disorder
+
+The script `task 2 classification/decision tree/2.3_disorder_decision_tree.py`
+builds the tree as it was done in class. The **disorder** of a set of
+mushrooms is
+
+`D = −Σ pᵢ · log₂(pᵢ)`
+
+where `pᵢ` is the share of family `i` in the set. `D = 0` when the set is
+homogeneous (one family). For every possible question, the mushrooms are split
+by their answer and the **average disorder** is computed:
+
+`average D = Σ_branches (n_branch / n) · D(branch)`
+
+The question with the least average disorder is asked. Each branch is then
+handled the same way using only the mushrooms that reached it, until every
+branch is homogeneous.
+
+- **Categorical question:** one branch per complete cell value present at that
+  node. Mushrooms listing `[x]`, `[f]` and `[f, x]` go to three different
+  branches, so a question is not limited to two answers.
+- **Numeric question:** `midpoint <= t?`, where `t` splits the mushrooms at
+  that node as evenly as possible into two groups. Because `t` depends on the
+  mushrooms at the node, the same column can be asked again lower in the tree.
+
+The 16 inputs are the 13 categorical columns kept in Step 1.11 and the three
+numeric midpoints; `family` is the target, and `name` and `class` are not used.
+
+**Root question.** The 123 training mushrooms have disorder **3.7216** (23
+families). The average disorder of each first question:
+
+| Question | Branches | Average disorder |
+|---|---:|---:|
+| What is gill-color? | 41 | **1.5003** |
+| What is cap-color? | 44 | 1.8076 |
+| What is cap-surface? | 34 | 1.9284 |
+| What is cap-shape? | 23 | 2.0521 |
+| What is gill-attachment? | 8 | 2.2276 |
+| … (11 more, up to) Is stem-height-midpoint <= 6.25? | 2 | 3.4633 |
+
+`gill-color` is asked first. Its largest branch, `[w]`, holds 24 mushrooms from
+6 families (disorder 2.1379); many other branches hold a single mushroom and
+are already homogeneous. The full candidate list and the per-branch
+calculation are in
+[`2.3_tree_summary.md`](<task 2 classification/decision tree/2.3_tree_summary.md>).
+
+**Resulting tree.** 25 questions, 114 leaves, maximum depth 3. Every leaf is
+homogeneous, so the tree classifies **all 123 training mushrooms correctly
+(100%)**. No two training mushrooms have identical features but different
+families, so this was always possible. The full tree is in
+[`2.3_tree.txt`](<task 2 classification/decision tree/2.3_tree.txt>).
+
+### Results
+
+| Data | Mushrooms | Correctly classified | Accuracy |
+|---|---:|---:|---:|
+| Training (used to build the tree) | 123 | 123 | **100.0%** |
+| Test (never seen by the tree) | 50 | 15 | **30.0%** |
+
+For comparison, always guessing the most common family (Tricholoma) gets
+30/123 = **24.4%** on training and 13/50 = **26.0%** on test. The tree is only
+4 percentage points better than this guess on unseen mushrooms.
+
+Accuracy counts every mushroom equally, so the many Tricholoma mushrooms
+dominate it. Macro F1 gives every family the same weight instead: the tree
+scores **0.190** on test and the always-Tricholoma guess scores **0.024**
+(1.0 would be perfect).
+
+### Why training is 100% but test is only 30%
+
+The tree keeps asking questions until every branch has a single family, so it
+always gets the training mushrooms right. It does this by memorising them
+rather than learning general rules. Average disorder prefers questions with
+many answers: `gill-color` splits the 123 training mushrooms into 41 branches,
+many with one mushroom each, and a one-mushroom branch always has disorder 0.
+That is why it was chosen first, and why no numeric question is used anywhere
+in the tree.
+
+A test mushroom often has an answer that no training mushroom had, for example
+a `gill-color` combination that never appeared in training. There is no branch
+for it, so the tree stops and guesses the most common family at that node.
+
+| What happened to the test mushroom | Mushrooms | Correct | Accuracy |
+|---|---:|---:|---:|
+| Followed a full path down to a leaf | 15 | 4 | 26.7% |
+| Reached an answer with no branch, so the node's most common family was used | 35 | 11 | 31.4% |
+| **All test mushrooms** | **50** | **15** | **30.0%** |
+
+Per-family scores and individual predictions are in
+[`2.3_tree_summary.md`](<task 2 classification/decision tree/2.3_tree_summary.md>)
+and [`2.3_test_predictions.csv`](<task 2 classification/decision tree/2.3_test_predictions.csv>).
